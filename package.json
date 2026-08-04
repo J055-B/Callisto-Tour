@@ -1,0 +1,31 @@
+{
+  "name": "tour-de-callisto",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "next": "15.0.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tailwindcss": "3.4.0",
+    "autoprefixer": "10.4.14",
+    "postcss": "8.4.21",
+    "date-fns": "2.32.0",
+    "zod": "3.22.2",
+    "recharts": "2.6.2",
+    "framer-motion": "10.12.10",
+    "lucide-react": "0.260.0",
+    "maplibre-gl": "2.4.0"
+  },
+  "devDependencies": {
+    "typescript": "5.6.2",
+    "eslint": "8.46.0",
+    "eslint-config-next": "13.4.1",
+    "prettier": "2.8.8"
+  }
+}
