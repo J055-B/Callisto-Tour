@@ -1,6 +1,8 @@
 import React from 'react'
 import LiveLeaderboard from '../components/leaderboard/LiveLeaderboard'
 import HeroPanel from '../components/hero/HeroPanel'
+import RouteOverview from '../components/stage/RouteOverview'
+import StageSummary from '../components/stage/StageSummary'
 import { getLeaderboard } from '../lib/data-source'
 
 export default async function Home() {
@@ -16,7 +18,9 @@ export default async function Home() {
             <LiveLeaderboard entries={leaderboard} />
           </div>
         </section>
-        <aside className="col-span-12 xl:col-span-4">
+        <aside className="col-span-12 xl:col-span-4 space-y-6">
+          <RouteOverview />
+          <StageSummary />
           <div className="rounded-lg p-6 app-surface">
             <h3 className="font-semibold">CURRENT LEADER</h3>
             {leader ? (
