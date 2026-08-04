@@ -13,6 +13,8 @@ export interface Team {
   countryName: string
   currentStage: string
   dailyHistory?: { date: string; sales: number }[]
+  totalDistance?: number
+  weeklyDistance?: number
 }
 
 export interface LeaderboardEntry extends Team {
