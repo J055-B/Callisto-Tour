@@ -1,39 +1,33 @@
 import React from 'react'
 import LiveLeaderboard from '../components/leaderboard/LiveLeaderboard'
+import LiveStatusBadge from '../components/leaderboard/LiveStatusBadge'
 import HeroPanel from '../components/hero/HeroPanel'
 import RouteOverview from '../components/stage/RouteOverview'
 import StageSummary from '../components/stage/StageSummary'
-import { getLeaderboard } from '../lib/data-source'
+import { getLeaderboard, getRoute } from '../lib/data-source'
+
+export const dynamic = 'force-dynamic'
 
 export default async function Home() {
   const leaderboard = await getLeaderboard()
+  const route = await getRoute()
   const leader = leaderboard[0]
   return (
-    <div className="space-y-6">
-      <HeroPanel />
-      <div className="grid grid-cols-12 gap-6">
-        <section className="col-span-12 xl:col-span-8">
-          <div className="rounded-lg p-6 app-surface">
-            <h2 className="text-2xl font-bold">LIVE LEADERBOARD</h2>
-            <LiveLeaderboard entries={leaderboard} />
+    <div className="grid grid-cols-12 gap-6 items-stretch">
+      <div className="col-span-12 xl:col-span-8 space-y-6">
+        <HeroPanel leader={leader} />
+        <div className="rounded-lg p-6 app-surface">
+          <div className="flex items-center gap-3 mb-6">
+            <LiveStatusBadge />
+            <h2 className="text-2xl font-extrabold italic shimmer-text">LIVE LEADERBOARD</h2>
           </div>
-        </section>
-        <aside className="col-span-12 xl:col-span-4 space-y-6">
-          <RouteOverview />
-          <StageSummary />
-          <div className="rounded-lg p-6 app-surface">
-            <h3 className="font-semibold">CURRENT LEADER</h3>
-            {leader ? (
-              <div className="mt-4">
-                <div className="text-4xl font-bold">#1 — {leader.teamCode}</div>
-                <div className="mt-2 text-secondaryText">{leader.countryName} • Lap {leader.lap}</div>
-                <div className="mt-4 text-yellow font-bold">{leader.totalDistance.toLocaleString()} km</div>
-              </div>
-            ) : (
-              <div>No leader</div>
-            )}
-          </div>
-        </aside>
+          <LiveLeaderboard entries={leaderboard} />
+        </div>
+      </div>
+      {/* Route Overview grows to fill this whole column's height (matching Hero + Leaderboard on the left); Stage Summary sits fixed-size below it. */}
+      <div className="col-span-12 xl:col-span-4 flex flex-col gap-6">
+        <RouteOverview leader={leader} teams={leaderboard} waypoints={route} />
+        <StageSummary team={leader} />
       </div>
     </div>
   )

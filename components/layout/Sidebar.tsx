@@ -1,6 +1,8 @@
+'use client'
 import React from 'react'
 import Link from 'next/link'
-import { Activity, BarChart3, Map, Trophy, Gift, Info, Send } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Activity, BarChart3, Map, Trophy, Gift, Info } from 'lucide-react'
 
 const items = [
   { href: '/', label: 'Race', icon: Activity },
@@ -12,18 +14,25 @@ const items = [
 ]
 
 export default function Sidebar() {
+  const pathname = usePathname()
+
   return (
     <aside className="w-24 h-screen flex flex-col items-center py-6 gap-6 bg-elevated border-r border-border">
       <div className="w-12 h-12 rounded-full bg-yellow flex items-center justify-center text-black font-bold text-xl">T</div>
       <nav className="flex-1 flex flex-col gap-3">
         {items.map((it) => {
           const Icon = it.icon
+          const active = it.href === '/' ? pathname === '/' : pathname?.startsWith(it.href)
           return (
             <Link
               key={it.href}
               href={it.href}
-              className="flex h-12 w-12 items-center justify-center rounded-full text-secondaryText hover:bg-yellow/10 hover:text-yellow transition-colors"
+              className={
+                'flex h-12 w-12 items-center justify-center rounded-full transition-colors ' +
+                (active ? 'bg-yellow/15 text-yellow ring-2 ring-yellow' : 'text-secondaryText hover:bg-yellow/10 hover:text-yellow')
+              }
               aria-label={it.label}
+              aria-current={active ? 'page' : undefined}
             >
               <Icon size={18} />
             </Link>

@@ -45,20 +45,6 @@ const teams: Team[] = [
     dailyHistory: []
   },
   {
-    id: 'canva',
-    teamCode: 'Canva',
-    pool: 'FTD',
-    initials: 'CAN',
-    location: 'Remote',
-    language: 'EN',
-    dailyTarget: 9000,
-    salesToday: 4500,
-    countryCode: 'US',
-    countryName: 'United States',
-    currentStage: 'Marseille → Madrid',
-    dailyHistory: []
-  },
-  {
     id: 'ftd-es-ash',
     teamCode: 'FTD ES ASH',
     pool: 'FTD',
