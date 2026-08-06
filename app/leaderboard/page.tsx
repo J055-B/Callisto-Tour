@@ -2,6 +2,8 @@ import React from 'react'
 import { getLeaderboard } from '../../lib/data-source'
 import LiveLeaderboard from '../../components/leaderboard/LiveLeaderboard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function LeaderboardPage() {
   const entries = await getLeaderboard()
   return (

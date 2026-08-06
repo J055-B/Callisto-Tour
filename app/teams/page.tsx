@@ -1,6 +1,8 @@
 import React from 'react'
 import { getTeams } from '../../lib/data-source'
 
+export const dynamic = 'force-dynamic'
+
 export default async function TeamsPage() {
   const teams = await getTeams()
   return (
