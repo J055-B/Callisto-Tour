@@ -174,4 +174,30 @@ export function positionForDistance(totalDistance: number) {
   }
 }
 
+// The stage that comes AFTER the leg the leader is currently on — used by
+// the Hero panel's third card ("what's coming up next"). Distinct from
+// positionForDistance, which only tells you the CURRENT leg.
+export function nextStageForDistance(totalDistance: number) {
+  const wrapped = ((totalDistance % LOOP_KM) + LOOP_KM) % LOOP_KM
+
+  let idx = 0
+  for (let i = 0; i < route.length; i++) {
+    if (route[i].cumulativeKm <= wrapped) idx = i
+    else break
+  }
+
+  // idx -> idx+1 is the CURRENT leg (same as positionForDistance); the
+  // NEXT leg starts at idx+1 and runs to idx+2.
+  const from = route[Math.min(idx + 1, route.length - 1)]
+  const to = route[Math.min(idx + 2, route.length - 1)]
+
+  return {
+    countryCode: from.countryCode,
+    countryName: from.countryName,
+    stageLabel: from.id === to.id ? from.name : `${from.name} → ${to.name}`,
+    // Feed this into videoUrlForDistance to get that stage's city clip.
+    cumulativeKm: from.cumulativeKm
+  }
+}
+
 export default route

@@ -15,7 +15,7 @@ export default async function Home() {
   return (
     <div className="grid grid-cols-12 gap-6 items-stretch">
       <div className="col-span-12 xl:col-span-8 space-y-6">
-        <HeroPanel leader={leader} />
+        <HeroPanel teams={leaderboard} />
         <div className="rounded-lg p-6 app-surface">
           <div className="flex items-center gap-3 mb-6">
             <LiveStatusBadge />

@@ -6,7 +6,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { LeaderboardEntry, RoutePoint } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
 import { LOOP_KM, positionForDistance } from '../../data/route'
-import { LatLng, pointOnLine, buildSegments, locate, jitter } from '../../lib/route-geometry'
+import {
+  LatLng,
+  pointOnLine,
+  buildSegments,
+  locate,
+  jitter,
+  ROUTE_LINE_COLOR,
+  ROUTE_ANCHOR_COLOR,
+  FLIGHT_LINE_COLOR
+} from '../../lib/route-geometry'
 
 // ---- OSRM road-routing (this full interactive map only — see MiniRouteMap for the lightweight card preview) ----
 
@@ -132,9 +141,12 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     // Mode's dev-only double-mount has already torn the canvas down — the
     // default SVG renderer updates the DOM synchronously and avoids that.
     const map = L.map(mapDivRef.current, { zoomControl: true }).setView([25, 20], 2)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // CartoDB Dark Matter — a minimalist black/gray basemap so team route
+    // lines (electric blue) and flight lines (orange) stand out clearly,
+    // instead of competing with a busy, colorful street map underneath.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     }).addTo(map)
     routeLayerRef.current = L.layerGroup().addTo(map)
     markerLayerRef.current = L.layerGroup().addTo(map)
@@ -162,15 +174,15 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
       const anchorCoords = seg.map((w) => w.coords as LatLng)
       const routed = routedSegments[i]
       // Faint fallback anchor line, always drawn.
-      L.polyline(anchorCoords, { color: '#8b9584', weight: routed ? 2 : 3, opacity: routed ? 0.25 : 0.7, dashArray: routed ? undefined : '7 7' }).addTo(layer)
+      L.polyline(anchorCoords, { color: ROUTE_ANCHOR_COLOR, weight: routed ? 2 : 3, opacity: routed ? 0.25 : 0.7, dashArray: routed ? undefined : '7 7' }).addTo(layer)
       if (routed && routed.length > 1) {
-        L.polyline(routed, { color: '#ffd21f', weight: 4, opacity: 0.95 }).addTo(layer)
+        L.polyline(routed, { color: ROUTE_LINE_COLOR, weight: 4, opacity: 0.95 }).addTo(layer)
       }
       // Dashed flight line from this segment's end to the next segment's start.
       const next = segments[(i + 1) % segments.length]
       const from = seg[seg.length - 1].coords as LatLng
       const to = next[0].coords as LatLng
-      L.polyline([from, to], { color: '#ff8d45', weight: 2.5, opacity: 0.85, dashArray: '2 10' }).addTo(layer)
+      L.polyline([from, to], { color: FLIGHT_LINE_COLOR, weight: 2.5, opacity: 0.85, dashArray: '2 10' }).addTo(layer)
     })
   }, [segments, routedSegments])
 

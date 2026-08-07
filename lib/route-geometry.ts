@@ -2,6 +2,12 @@ import { RoutePoint } from './types'
 
 export type LatLng = [number, number]
 
+// Shared route-line palette — both the full map and the home mini-map
+// import these, so they never drift out of sync with each other.
+export const ROUTE_LINE_COLOR = '#2F81FF' // electric blue — the actual road path
+export const ROUTE_ANCHOR_COLOR = '#5B6773' // faint gray fallback/anchor line
+export const FLIGHT_LINE_COLOR = '#FF8D45' // orange dashed — flight legs
+
 export function haversineKm(a: LatLng, b: LatLng) {
   const R = 6371.0088
   const rad = (x: number) => (x * Math.PI) / 180
@@ -34,7 +40,7 @@ export function pointOnLine(coords: LatLng[], fraction: number): LatLng {
 }
 
 // Splits the waypoint chain wherever a leg is 0km (a flight) into
-// contiguous drivable segments — see the One Pager's map legend: "Yellow =
+// contiguous drivable segments — see the One Pager's map legend: "Blue =
 // road; orange dashed = flights".
 export function buildSegments(waypoints: RoutePoint[]): RoutePoint[][] {
   if (waypoints.length === 0) return []

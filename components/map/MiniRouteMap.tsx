@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { LeaderboardEntry, RoutePoint } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
 import { LOOP_KM } from '../../data/route'
-import { LatLng, pointOnLine, buildSegments, locate, jitter } from '../../lib/route-geometry'
+import { LatLng, pointOnLine, buildSegments, locate, jitter, ROUTE_LINE_COLOR, FLIGHT_LINE_COLOR } from '../../lib/route-geometry'
 
 // A small, non-interactive preview of the route for the "Route Overview"
 // card — plain straight lines between waypoints (no live OSRM fetch, unlike
@@ -30,16 +30,18 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
       touchZoom: false,
       attributionControl: false
     }).setView([25, 20], 1)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map)
+    // Same dark, minimalist basemap as the full /map page, so the route
+    // lines read clearly even at this small preview size.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map)
     mapRef.current = map
 
     const routeLayer = L.layerGroup().addTo(map)
     segments.forEach((seg, i) => {
       const coords = seg.map((w) => w.coords as LatLng)
-      L.polyline(coords, { color: '#ffd21f', weight: 2, opacity: 0.85 }).addTo(routeLayer)
+      L.polyline(coords, { color: ROUTE_LINE_COLOR, weight: 2, opacity: 0.85 }).addTo(routeLayer)
       const next = segments[(i + 1) % segments.length]
       L.polyline([seg[seg.length - 1].coords as LatLng, next[0].coords as LatLng], {
-        color: '#ff8d45',
+        color: FLIGHT_LINE_COLOR,
         weight: 1.5,
         opacity: 0.75,
         dashArray: '2 6'

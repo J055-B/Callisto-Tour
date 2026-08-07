@@ -15,6 +15,7 @@ module.exports = {
         positive: '#56D92B',
         orange: '#FF7A00',
         negative: '#FF453A',
+        electric: '#2F81FF',
         primaryText: '#F4F7F8',
         secondaryText: '#8B999F'
       }
