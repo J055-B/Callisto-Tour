@@ -2,6 +2,7 @@ import React from 'react'
 import { getRoute, getLeaderboard } from '../../lib/data-source'
 import { LOOP_KM } from '../../data/route'
 import RouteMapLoader from '../../components/map/RouteMapLoader'
+import MilestoneChart from '../../components/stage/MilestoneChart'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,9 @@ export default async function MapPage() {
         </div>
       </div>
       <RouteMapLoader waypoints={route} teams={leaderboard} />
+      <div className="mt-4">
+        <MilestoneChart teams={leaderboard} />
+      </div>
     </div>
   )
 }
