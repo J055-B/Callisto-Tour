@@ -74,6 +74,20 @@ function eachDateBetween(start: string, end: string) {
   return dates
 }
 
+// Total km a team would need to hit "on pace" for the CURRENT calendar week
+// if every remaining day counted a fresh dailyTarget (7 days normally, 8 in
+// Week 3) — used by the /leaderboard page's per-team stat cards. Clamped to
+// the tour's date range so it still returns something sensible before
+// Aug 10 / after Aug 31. Doesn't special-case MADA's weekend doubling (see
+// isMadaSharedWeekendDay) — this is a simple weekly-pace figure, not a
+// day-by-day recompute.
+export function weeklyTargetForToday(dailyTarget: number, today: Date = new Date()) {
+  const todayStr = clampToTourRange(today.toISOString().slice(0, 10))
+  const week = weekFor(todayStr) ?? WEEKS[WEEKS.length - 1]
+  const days = eachDateBetween(week.start, week.end).length
+  return dailyTarget * days
+}
+
 interface TeamMetrics {
   salesToday: number
   targetPct: number
