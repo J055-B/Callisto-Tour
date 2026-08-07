@@ -172,9 +172,10 @@ function assignTargets(configs: TeamSheetConfig[], targetRows: TargetRow[]) {
   })
 }
 
-// Every sale row counts as +1 (Full and Partial both count), bucketed by
-// the "Conversion Date" column's calendar day.
-function buildDailyHistory(rows: string[][]): { date: string; sales: number }[] {
+// FTD sheets: every sale row counts as +1 (Full and Partial both count),
+// bucketed by the "Date"/"Conversion Date" column's calendar day. FTD daily
+// targets are a sale COUNT, not money, so this is the right unit for them.
+function buildDailyHistoryByCount(rows: string[][]): { date: string; sales: number }[] {
   if (rows.length < 2) return []
   const headers = rows[0].map((h) => normalizeHeader(h || ''))
   const dateIndex = headers.findIndex((h) => /conversion.*date|^date$/.test(h))
@@ -193,6 +194,32 @@ function buildDailyHistory(rows: string[][]): { date: string; sales: number }[] 
     .sort((a, b) => (a.date < b.date ? -1 : 1))
 }
 
+// RET sheets: daily targets are REVENUE (USD, e.g. "152,900.00"), not a
+// sale count — a team with 3 big charges must outscore a team with 10 tiny
+// ones. So instead of counting rows, sum each row's "SUM" column (the
+// per-charge USD amount already computed in the sheet), bucketed by the
+// same "Date" column's calendar day.
+function buildDailyHistoryByAmount(rows: string[][]): { date: string; sales: number }[] {
+  if (rows.length < 2) return []
+  const headers = rows[0].map((h) => normalizeHeader(h || ''))
+  const dateIndex = headers.findIndex((h) => /conversion.*date|^date$/.test(h))
+  const amountIndex = headers.findIndex((h) => /^sum$/.test(h))
+  if (dateIndex === -1 || amountIndex === -1) return []
+
+  const totals = new Map<string, number>()
+  for (const row of rows.slice(1)) {
+    const raw = (row[dateIndex] || '').trim()
+    const date = raw.slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue
+    const amount = parseNumber(row[amountIndex]) ?? 0
+    totals.set(date, (totals.get(date) ?? 0) + amount)
+  }
+
+  return Array.from(totals.entries())
+    .map(([date, sales]) => ({ date, sales }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+}
+
 function mergeDailyHistory(a: { date: string; sales: number }[], b: { date: string; sales: number }[]) {
   const counts = new Map<string, number>()
   for (const { date, sales } of [...a, ...b]) {
@@ -204,7 +231,10 @@ function mergeDailyHistory(a: { date: string; sales: number }[], b: { date: stri
 }
 
 function buildTeam(cfg: TeamSheetConfig & { dailyTarget: number; monthlyTarget?: number }, sheetRowsByName: Map<string, string[][]>): Team {
-  const histories = cfg.sheetNames.map((name) => buildDailyHistory(sheetRowsByName.get(name) ?? []))
+  // RET's daily target is money, FTD's is a sale count — see the two
+  // buildDailyHistoryBy* functions above for why each pool needs its own.
+  const buildHistory = cfg.pool === 'RET' ? buildDailyHistoryByAmount : buildDailyHistoryByCount
+  const histories = cfg.sheetNames.map((name) => buildHistory(sheetRowsByName.get(name) ?? []))
   const dailyHistory = histories.reduce((acc, h) => mergeDailyHistory(acc, h), [] as { date: string; sales: number }[])
 
   return {
