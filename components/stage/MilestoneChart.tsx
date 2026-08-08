@@ -1,10 +1,10 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
 import { LeaderboardEntry } from '../../lib/types'
 import { MILESTONE_STAGES, milestonePositionForDistance } from '../../lib/milestones'
 
-const TICK_STEP = 250 // km — divides evenly into every stage width (1000, 1500, and 1250)
+const TEAM_LIST_COLS = '48px 1.3fr 1.3fr 1.6fr 1fr'
 
 interface TeamPosition {
   team: LeaderboardEntry
@@ -23,15 +23,12 @@ export default function MilestoneChart({ teams }: { teams: LeaderboardEntry[] })
   const stage = MILESTONE_STAGES[activeIndex - 1]
 
   const onThisStage = positions.filter((p) => p.stageIndex === activeIndex)
-  const behind = positions.filter((p) => p.stageIndex < activeIndex)
-  const ahead = positions.filter((p) => p.stageIndex > activeIndex)
 
   const goPrev = () => setActiveIndex((i) => (i === 1 ? MILESTONE_STAGES.length : i - 1))
   const goNext = () => setActiveIndex((i) => (i === MILESTONE_STAGES.length ? 1 : i + 1))
 
-  const ticks: number[] = []
-  for (let km = 0; km <= stage.widthKm; km += TICK_STEP) ticks.push(km)
-  if (ticks[ticks.length - 1] !== stage.widthKm) ticks.push(stage.widthKm)
+  // Start/end city names, pulled out of "Sofia → Trieste" for the axis end-caps.
+  const [startCity, endCity] = stage.label.split('→').map((s) => s.trim())
 
   return (
     <div className="rounded-lg p-4 app-surface">
@@ -53,7 +50,13 @@ export default function MilestoneChart({ teams }: { teams: LeaderboardEntry[] })
       </div>
 
       <div className="flex items-start gap-3">
-        <NavArrow direction="prev" onClick={goPrev} positions={behind} />
+        <button
+          onClick={goPrev}
+          className="shrink-0 w-9 h-9 rounded-full border border-border text-secondaryText hover:bg-yellow/10 hover:text-yellow transition flex items-center justify-center"
+          aria-label="Previous stage"
+        >
+          <ChevronLeft size={18} />
+        </button>
 
         <div className="flex-1 min-w-0">
           {/* The flat bar */}
@@ -86,73 +89,74 @@ export default function MilestoneChart({ teams }: { teams: LeaderboardEntry[] })
             ))}
           </div>
 
-          {/* Distance axis + inner point city labels */}
-          <div className="relative h-10 mt-1 border-t border-border pt-1.5">
-            {ticks.map((km) => (
-              <div
-                key={km}
-                className="absolute top-1.5 -translate-x-1/2 text-[10px] text-secondaryText"
-                style={{ left: `${(km / stage.widthKm) * 100}%` }}
-              >
-                {km.toLocaleString()}
-              </div>
-            ))}
+          {/* Distance axis — real km-at-that-city under each point, not generic round intervals */}
+          <div className="relative h-11 mt-1 border-t border-border pt-1.5">
+            <div className="absolute top-1.5 left-0 text-[10px] text-secondaryText">
+              <div className="font-bold text-primaryText">0</div>
+              <div className="text-secondaryText/70 whitespace-nowrap">{startCity}</div>
+            </div>
+            <div className="absolute top-1.5 right-0 text-[10px] text-secondaryText text-right">
+              <div className="font-bold text-primaryText">{stage.widthKm.toLocaleString()}</div>
+              <div className="text-secondaryText/70 whitespace-nowrap">{endCity}</div>
+            </div>
             {stage.points.map((p, i) => (
-              <div
-                key={i}
-                className="absolute top-6 -translate-x-1/2 text-[10px] text-secondaryText/70 whitespace-nowrap"
-                style={{ left: `${p.fraction * 100}%` }}
-              >
-                {p.name}
+              <div key={i} className="absolute top-1.5 -translate-x-1/2 text-[10px] text-center" style={{ left: `${p.fraction * 100}%` }}>
+                <div className="font-bold text-primaryText">{Math.round(p.fraction * stage.widthKm).toLocaleString()}</div>
+                <div className="text-secondaryText/70 whitespace-nowrap">{p.name}</div>
               </div>
             ))}
           </div>
         </div>
 
-        <NavArrow direction="next" onClick={goNext} positions={ahead} />
+        <button
+          onClick={goNext}
+          className="shrink-0 w-9 h-9 rounded-full border border-border text-secondaryText hover:bg-yellow/10 hover:text-yellow transition flex items-center justify-center"
+          aria-label="Next stage"
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
-    </div>
-  )
-}
 
-function NavArrow({
-  direction,
-  onClick,
-  positions
-}: {
-  direction: 'prev' | 'next'
-  onClick: () => void
-  positions: TeamPosition[]
-}) {
-  const MAX = 3
-  const codes = positions.map((p) => p.team.teamCode)
-  const shown = codes.slice(0, MAX)
-  const extra = codes.length - shown.length
-
-  return (
-    <div className={`shrink-0 flex flex-col items-center gap-1.5 w-24 ${direction === 'next' ? 'items-end' : 'items-start'}`}>
-      <button
-        onClick={onClick}
-        className="w-9 h-9 rounded-full border border-border text-secondaryText hover:bg-yellow/10 hover:text-yellow transition flex items-center justify-center"
-        aria-label={direction === 'prev' ? 'Previous stage' : 'Next stage'}
-      >
-        {direction === 'prev' ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-      </button>
-      {positions.length > 0 && (
-        <div className={`flex flex-col gap-1 ${direction === 'next' ? 'items-end' : 'items-start'}`}>
-          <span className="text-[9px] font-bold text-secondaryText tracking-wide">
-            {direction === 'prev' ? 'BEHIND' : 'AHEAD'} ({positions.length})
-          </span>
-          <div className={`flex flex-wrap gap-1 ${direction === 'next' ? 'justify-end' : ''}`}>
-            {shown.map((c) => (
-              <span key={c} className="px-1.5 py-0.5 rounded-full bg-elevated border border-border text-[9px] text-secondaryText whitespace-nowrap">
-                {c}
-              </span>
-            ))}
-            {extra > 0 && <span className="text-[9px] text-secondaryText">+{extra}</span>}
-          </div>
+      {/* Every team, ordered by overall distance — click a row to jump the chart above to that team's stage. */}
+      <div className="mt-6">
+        <div className="grid gap-3 px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-secondaryText" style={{ gridTemplateColumns: TEAM_LIST_COLS }}>
+          <div>POS</div>
+          <div>TEAM</div>
+          <div>STAGE</div>
+          <div>KM IN STAGE</div>
+          <div>TOTAL KM</div>
         </div>
-      )}
+        <div className="mt-2 space-y-1.5">
+          {positions.map((p, i) => {
+            const pos = i + 1
+            const isActiveStage = p.stageIndex === activeIndex
+            const teamStage = MILESTONE_STAGES[p.stageIndex - 1]
+            const kmInStage = Math.round(p.fraction * teamStage.widthKm)
+            return (
+              <button
+                key={p.team.id}
+                onClick={() => setActiveIndex(p.stageIndex)}
+                className={
+                  'w-full grid items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ' +
+                  (isActiveStage ? 'bg-yellow/10 border border-yellow/60' : 'bg-elevated/60 border border-border hover:border-secondaryText')
+                }
+                style={{ gridTemplateColumns: TEAM_LIST_COLS }}
+              >
+                <div className="flex items-center gap-1 text-sm font-bold">
+                  {pos === 1 && <Trophy size={13} color="#FFD700" fill="#FFD700" />}
+                  {pos}
+                </div>
+                <div className="text-sm font-medium truncate">{p.team.teamCode}</div>
+                <div className="text-sm text-secondaryText">Stage {p.stageIndex}</div>
+                <div className="text-sm">
+                  {kmInStage.toLocaleString()} / {teamStage.widthKm.toLocaleString()} km
+                </div>
+                <div className="text-sm font-semibold">{Math.round(p.team.totalDistance).toLocaleString()} km</div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

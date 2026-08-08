@@ -16,8 +16,11 @@ export default function HeroPanel({ teams }: { teams: LeaderboardEntry[] }) {
   }
 
   const leader = teams[0]
+  const last = teams[teams.length - 1]
   const { stageIndex, fraction } = milestonePositionForDistance(leader.totalDistance)
   const stage = MILESTONE_STAGES[stageIndex - 1]
+  const nextIndex = stageIndex === MILESTONE_STAGES.length ? 1 : stageIndex + 1
+  const nextStage = MILESTONE_STAGES[nextIndex - 1]
   const { day, totalDays } = tourDayInfo()
   const videoUrl = videoUrlForDistance(leader.totalDistance)
   const flag = flagUrl(leader.countryCode)
@@ -29,6 +32,19 @@ export default function HeroPanel({ teams }: { teams: LeaderboardEntry[] }) {
     <div className="rounded-lg overflow-hidden relative h-60 app-surface">
       <video key={videoUrl} className="absolute inset-0 w-full h-full object-cover" src={videoUrl} autoPlay muted loop playsInline />
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
+
+      {/* Last place / next stage — kept from the original 3-card hero, now as
+          compact secondary badges instead of their own cards. */}
+      {teams.length > 1 && (
+        <div className="absolute top-6 right-6 flex flex-col items-end gap-2 text-right">
+          <div className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-elevated/80 border border-border text-secondaryText backdrop-blur-sm whitespace-nowrap">
+            LAST: {last.teamCode}
+          </div>
+          <div className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-electric/20 border border-electric/50 text-electric backdrop-blur-sm whitespace-nowrap">
+            NEXT STAGE {nextStage.index}: {nextStage.label.toUpperCase()}
+          </div>
+        </div>
+      )}
 
       <div className="relative h-full flex flex-col justify-between p-6">
         <div>
