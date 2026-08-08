@@ -2,6 +2,7 @@ import '../styles/globals.css'
 import React from 'react'
 import Sidebar from '../components/layout/Sidebar'
 import Header from '../components/layout/Header'
+import MonitorMode from '../components/layout/MonitorMode'
 
 export const metadata = {
   title: 'Tour de Callisto'
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="p-6">{children}</main>
           </div>
         </div>
+        <MonitorMode />
       </body>
     </html>
   )

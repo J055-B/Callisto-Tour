@@ -3,6 +3,7 @@
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { LeaderboardEntry, RoutePoint } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
 import { LOOP_KM, positionForDistance } from '../../data/route'
@@ -16,6 +17,7 @@ import {
   ROUTE_ANCHOR_COLOR,
   FLIGHT_LINE_COLOR
 } from '../../lib/route-geometry'
+import { MILESTONE_STAGES, milestonePositionForDistance, STAGE_BOUNDARY_POINTS } from '../../lib/milestones'
 
 // ---- OSRM road-routing (this full interactive map only — see MiniRouteMap for the lightweight card preview) ----
 
@@ -112,6 +114,20 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     if (withTarget.length === 0) return 0
     return withTarget.reduce((sum, t) => sum + t.dailyTarget, 0) / withTarget.length
   }, [teams])
+
+  // Driven by MonitorMode.tsx's kiosk loop via /map?focus=N — when present,
+  // fly to that team and show its info card bottom-left. Absent in normal
+  // interactive use.
+  const searchParams = useSearchParams()
+  const focusParam = searchParams.get('focus')
+  const focusIndex = focusParam !== null && focusParam !== '' ? Number(focusParam) : null
+  const focusedTeam = focusIndex !== null && Number.isFinite(focusIndex) && teams.length > 0 ? teams[((focusIndex % teams.length) + teams.length) % teams.length] : null
+  const focusedMilestone = focusedTeam ? milestonePositionForDistance(focusedTeam.totalDistance) : null
+  const focusedPosition = focusedTeam
+    ? { countryCode: focusedTeam.countryCode, countryName: focusedTeam.countryName }
+    : null
+  const focusedFlag = focusedPosition ? flagUrl(focusedPosition.countryCode) : null
+  const focusedCity = focusedTeam?.currentStage?.split('→')[0]?.trim() || focusedPosition?.countryName
 
   async function loadRoadRoute() {
     setLoading(true)
@@ -228,6 +244,22 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
       const to = next[0].coords as LatLng
       L.polyline([from, to], { color: FLIGHT_LINE_COLOR, weight: 2.5, opacity: 0.85, dashArray: '2 10' }).addTo(layer)
     })
+
+    // Bigger red dots at every stage start/end, so it's obvious where one
+    // stage hands off to the next along what would otherwise be one long
+    // undifferentiated line.
+    STAGE_BOUNDARY_POINTS.forEach((p) => {
+      const label = p.stageIndex === 0 ? `${p.name} — Tour start` : `${p.name} — Stage ${p.stageIndex} end / Stage ${p.stageIndex === MILESTONE_STAGES.length ? 1 : p.stageIndex + 1} start`
+      L.circleMarker(p.coords, {
+        radius: 7,
+        color: '#FF3B30',
+        weight: 2,
+        fillColor: '#FF3B30',
+        fillOpacity: 1
+      })
+        .bindTooltip(label, { direction: 'top', offset: [0, -6] })
+        .addTo(layer)
+    })
   }, [segments, routedSegments])
 
   // Draw / redraw team markers whenever teams, simulation state, or route geometry change.
@@ -265,9 +297,35 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     })
   }, [teams, simulate, simKm, segments, routedSegments, avgDailyTarget])
 
+  // Fly to the focused team (?focus=N, driven by MonitorMode's kiosk loop)
+  // whenever it changes.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !focusedTeam) return
+    const wrapped = ((focusedTeam.totalDistance % LOOP_KM) + LOOP_KM) % LOOP_KM
+    const { segmentIndex, fraction } = locate(segments, wrapped)
+    const seg = segments[segmentIndex]
+    const coords = routedSegments[segmentIndex] ?? seg.map((w) => w.coords as LatLng)
+    const [lat, lon] = pointOnLine(coords, fraction)
+    map.flyTo([lat, lon], 7, { duration: 1.2 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusIndex, teams, segments, routedSegments])
+
   return (
     <div className="space-y-4">
-      <div ref={mapDivRef} className="h-[78vh] min-h-[620px] w-full rounded-lg overflow-hidden border border-border" />
+      <div className="relative">
+        <div ref={mapDivRef} className="h-[78vh] min-h-[620px] w-full rounded-lg overflow-hidden border border-border" />
+        {focusedTeam && (
+          <div className="absolute left-4 bottom-4 z-[1000] bg-black/75 backdrop-blur-sm rounded-lg px-4 py-3 border border-border">
+            <div className="text-sm font-bold">{focusedTeam.teamCode}</div>
+            {focusedMilestone && <div className="text-xs text-secondaryText mt-0.5">STAGE {focusedMilestone.stageIndex}</div>}
+            <div className="text-xs text-white/90 font-semibold mt-1 flex items-center gap-1.5">
+              {focusedFlag && <img src={focusedFlag} alt="" className="w-4 h-2.5 rounded-sm object-cover" />}
+              {focusedCity}
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="rounded-lg p-4 app-surface flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-secondaryText">{status}</div>

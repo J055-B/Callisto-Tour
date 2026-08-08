@@ -1,8 +1,9 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, BarChart3, Map, Trophy, Gift, Info } from 'lucide-react'
+import { Activity, BarChart3, Map, Trophy, Gift, Info, Tv } from 'lucide-react'
+import { MONITOR_MODE_STORAGE_KEY, MONITOR_MODE_EVENT } from '../../lib/monitor-mode'
 
 const items = [
   { href: '/', label: 'Race', icon: Activity },
@@ -15,6 +16,18 @@ const items = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [monitorMode, setMonitorMode] = useState(false)
+
+  useEffect(() => {
+    setMonitorMode(localStorage.getItem(MONITOR_MODE_STORAGE_KEY) === '1')
+  }, [])
+
+  function toggleMonitorMode() {
+    const next = !monitorMode
+    setMonitorMode(next)
+    localStorage.setItem(MONITOR_MODE_STORAGE_KEY, next ? '1' : '0')
+    window.dispatchEvent(new Event(MONITOR_MODE_EVENT))
+  }
 
   return (
     <aside className="w-24 h-screen flex flex-col items-center py-6 gap-6 bg-elevated border-r border-border">
@@ -39,6 +52,17 @@ export default function Sidebar() {
           )
         })}
       </nav>
+      <button
+        onClick={toggleMonitorMode}
+        className={
+          'flex h-12 w-12 items-center justify-center rounded-full transition-colors ' +
+          (monitorMode ? 'bg-electric/15 text-electric ring-2 ring-electric' : 'text-secondaryText hover:bg-electric/10 hover:text-electric')
+        }
+        aria-label="Toggle TV / kiosk mode"
+        title="TV MODE — auto-cycle home ↔ map"
+      >
+        <Tv size={18} />
+      </button>
       <div className="text-center text-[10px] text-secondaryText leading-4 px-2">THE JOURNEY<br />NEVER STOPS</div>
     </aside>
   )

@@ -125,3 +125,28 @@ export function milestonePositionForDistance(totalDistance: number) {
 
   return { stageIndex: stage.index, fraction }
 }
+
+export interface StageBoundaryPoint {
+  /** The stage that ENDS here (1-16). 0 = the very first point (Sofia, the tour's overall start). */
+  stageIndex: number
+  name: string
+  countryCode: string
+  coords: [number, number]
+}
+
+// The 17 cities where one stage hands off to the next (Sofia + each of the
+// 16 STAGE_DEFS endpoints) — plotted as bigger red dots on the full map so
+// it's visually obvious where each stage starts/ends along the route,
+// instead of one long undifferentiated line. See RouteMap.tsx.
+export const STAGE_BOUNDARY_POINTS: StageBoundaryPoint[] = (() => {
+  const first = route[0]
+  const points: StageBoundaryPoint[] = [
+    { stageIndex: 0, name: first.name, countryCode: first.countryCode, coords: first.coords as [number, number] }
+  ]
+  STAGE_DEFS.forEach((def, i) => {
+    const wp = route.find((w) => w.id === def.endId)
+    if (!wp) return
+    points.push({ stageIndex: i + 1, name: wp.name, countryCode: wp.countryCode, coords: wp.coords as [number, number] })
+  })
+  return points
+})()
