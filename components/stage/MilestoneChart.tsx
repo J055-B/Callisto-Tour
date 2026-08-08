@@ -119,7 +119,7 @@ export default function MilestoneChart({ teams }: { teams: LeaderboardEntry[] })
 
       {/* Every team, ordered by overall distance — click a row to jump the chart above to that team's stage. */}
       <div className="mt-6">
-        <div className="grid gap-3 px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-secondaryText" style={{ gridTemplateColumns: TEAM_LIST_COLS }}>
+        <div className="grid gap-3 px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-secondaryText" style={{ gridTemplateColumns: TEAM_LIST_COLS }}>
           <div>POS</div>
           <div>TEAM</div>
           <div>STAGE</div>
@@ -137,21 +137,21 @@ export default function MilestoneChart({ teams }: { teams: LeaderboardEntry[] })
                 key={p.team.id}
                 onClick={() => setActiveIndex(p.stageIndex)}
                 className={
-                  'w-full grid items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ' +
-                  (isActiveStage ? 'bg-yellow/10 border border-yellow/60' : 'bg-elevated/60 border border-border hover:border-secondaryText')
+                  'w-full grid items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ' +
+                  (isActiveStage ? 'bg-positive/10 border border-positive/60' : 'bg-elevated/60 border border-border hover:border-secondaryText')
                 }
                 style={{ gridTemplateColumns: TEAM_LIST_COLS }}
               >
-                <div className="flex items-center gap-1 text-sm font-bold">
-                  {pos === 1 && <Trophy size={13} color="#FFD700" fill="#FFD700" />}
-                  {pos}
+                <div className="flex items-center gap-1.5 text-base font-bold">
+                  <span className="w-4 h-4 shrink-0 flex items-center justify-center">{pos === 1 && <Trophy size={14} color="#FFD700" fill="#FFD700" />}</span>
+                  <span>{pos}</span>
                 </div>
-                <div className="text-sm font-medium truncate">{p.team.teamCode}</div>
-                <div className="text-sm text-secondaryText">Stage {p.stageIndex}</div>
-                <div className="text-sm">
+                <div className="text-base font-bold truncate">{p.team.teamCode}</div>
+                <div className="text-base font-semibold text-secondaryText">Stage {p.stageIndex}</div>
+                <div className="text-base font-semibold">
                   {kmInStage.toLocaleString()} / {teamStage.widthKm.toLocaleString()} km
                 </div>
-                <div className="text-sm font-semibold">{Math.round(p.team.totalDistance).toLocaleString()} km</div>
+                <div className="text-base font-bold">{Math.round(p.team.totalDistance).toLocaleString()} km</div>
               </button>
             )
           })}
