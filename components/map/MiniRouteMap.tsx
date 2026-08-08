@@ -67,6 +67,19 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
       L.marker([lat, lon], { icon: L.divIcon({ className: '', html, iconSize: undefined, iconAnchor: [15, 10] }), zIndexOffset: index }).addTo(markerLayer)
     })
 
+    // Same fix as the full /map page: fitBounds below picks whatever zoom
+    // fits the whole route, which — for this small a container — can land
+    // below the point where the (single, bounded) world map still covers
+    // the container edge-to-edge, leaving a blank strip. Floor it.
+    function applyMinZoom() {
+      const size = map.getSize()
+      if (size.x === 0 || size.y === 0) return
+      const zoomX = Math.log2(size.x / 256)
+      const zoomY = Math.log2(size.y / 256)
+      map.setMinZoom(Math.max(1, Math.ceil(Math.max(zoomX, zoomY))))
+    }
+    applyMinZoom()
+
     const allCoords: LatLng[] = waypoints.filter((w) => w.coords).map((w) => w.coords as LatLng)
     if (allCoords.length) map.fitBounds(L.latLngBounds(allCoords), { padding: [8, 8] })
 

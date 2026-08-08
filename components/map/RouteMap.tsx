@@ -163,6 +163,25 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     markerLayerRef.current = L.layerGroup().addTo(map)
     mapRef.current = map
 
+    // maxBounds stops panning past the edge of the (single) world map, but
+    // without a minZoom the person can still zoom OUT past the point where
+    // that bounded map is big enough to fill the container — that's the
+    // white empty strip. Compute the smallest zoom where the map still
+    // covers the container's actual pixel size, in both directions, and
+    // don't allow going below it. Recomputed on resize since the container
+    // itself is responsive (vh-based height).
+    function applyMinZoom() {
+      const size = map.getSize()
+      if (size.x === 0 || size.y === 0) return
+      const zoomX = Math.log2(size.x / 256)
+      const zoomY = Math.log2(size.y / 256)
+      const minZoom = Math.max(2, Math.ceil(Math.max(zoomX, zoomY)))
+      map.setMinZoom(minZoom)
+    }
+    applyMinZoom()
+    map.on('resize', applyMinZoom)
+    window.addEventListener('resize', applyMinZoom)
+
     // Open zoomed on wherever the teams currently are, not the whole
     // planet zoomed all the way out — the full route is still reachable by
     // scrolling/panning out.
@@ -182,6 +201,7 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     loadRoadRoute()
 
     return () => {
+      window.removeEventListener('resize', applyMinZoom)
       map.remove()
       mapRef.current = null
     }
