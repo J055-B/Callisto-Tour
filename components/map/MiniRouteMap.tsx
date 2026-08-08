@@ -20,6 +20,7 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
 
   useEffect(() => {
     if (!mapDivRef.current || mapRef.current) return
+    const WORLD_BOUNDS = L.latLngBounds([-85, -175], [85, 175])
     const map = L.map(mapDivRef.current, {
       zoomControl: false,
       dragging: false,
@@ -28,11 +29,16 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
       boxZoom: false,
       keyboard: false,
       touchZoom: false,
-      attributionControl: false
+      attributionControl: false,
+      // Same fix as the full /map page — without this the world tiles
+      // repeat side-by-side at low zoom ("continents x3 with white seams").
+      worldCopyJump: false,
+      maxBounds: WORLD_BOUNDS,
+      maxBoundsViscosity: 1
     }).setView([25, 20], 1)
     // Same dark, minimalist basemap as the full /map page, so the route
     // lines read clearly even at this small preview size.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, noWrap: true, bounds: WORLD_BOUNDS }).addTo(map)
     mapRef.current = map
 
     const routeLayer = L.layerGroup().addTo(map)

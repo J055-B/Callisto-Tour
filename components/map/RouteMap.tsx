@@ -140,20 +140,44 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     // redraws via requestAnimationFrame, which can fire after React 18 Strict
     // Mode's dev-only double-mount has already torn the canvas down — the
     // default SVG renderer updates the DOM synchronously and avoids that.
-    const map = L.map(mapDivRef.current, { zoomControl: true }).setView([25, 20], 2)
+    const WORLD_BOUNDS = L.latLngBounds([-85, -175], [85, 175])
+    const map = L.map(mapDivRef.current, {
+      zoomControl: true,
+      // Without these, Leaflet tiles the whole planet side-by-side to fill
+      // the viewport at low zoom — that's the "continents repeated 3x with
+      // white seams" bug. Locking to one world copy fixes it.
+      worldCopyJump: false,
+      maxBounds: WORLD_BOUNDS,
+      maxBoundsViscosity: 1
+    }).setView([20, 15], 3)
     // CartoDB Dark Matter — a minimalist black/gray basemap so team route
     // lines (electric blue) and flight lines (orange) stand out clearly,
     // instead of competing with a busy, colorful street map underneath.
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
+      noWrap: true,
+      bounds: WORLD_BOUNDS,
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     }).addTo(map)
     routeLayerRef.current = L.layerGroup().addTo(map)
     markerLayerRef.current = L.layerGroup().addTo(map)
     mapRef.current = map
 
-    const allCoords: LatLng[] = waypoints.filter((w) => w.coords).map((w) => w.coords as LatLng)
-    if (allCoords.length) map.fitBounds(L.latLngBounds(allCoords), { padding: [30, 30] })
+    // Open zoomed on wherever the teams currently are, not the whole
+    // planet zoomed all the way out — the full route is still reachable by
+    // scrolling/panning out.
+    const initialPositions: LatLng[] = teams.map((team) => {
+      const wrapped = ((team.totalDistance % LOOP_KM) + LOOP_KM) % LOOP_KM
+      const { segmentIndex, fraction } = locate(segments, wrapped)
+      const seg = segments[segmentIndex]
+      return pointOnLine(seg.map((w) => w.coords as LatLng), fraction)
+    })
+    if (initialPositions.length) {
+      map.fitBounds(L.latLngBounds(initialPositions), { padding: [80, 80], maxZoom: 6 })
+    } else {
+      const allCoords: LatLng[] = waypoints.filter((w) => w.coords).map((w) => w.coords as LatLng)
+      if (allCoords.length) map.fitBounds(L.latLngBounds(allCoords), { padding: [30, 30] })
+    }
 
     loadRoadRoute()
 
@@ -223,7 +247,7 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
 
   return (
     <div className="space-y-4">
-      <div ref={mapDivRef} className="h-[520px] w-full rounded-lg overflow-hidden border border-border" />
+      <div ref={mapDivRef} className="h-[78vh] min-h-[620px] w-full rounded-lg overflow-hidden border border-border" />
 
       <div className="rounded-lg p-4 app-surface flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-secondaryText">{status}</div>
