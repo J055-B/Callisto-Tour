@@ -179,10 +179,16 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     fetch('/world-countries.geo.json')
       .then((r) => r.json())
       .then((geojson) => {
+        // fetch() resolves after the route/marker layers below are already
+        // added — Leaflet stacks newer layers on top, so without
+        // bringToBack() the country shapes would render OVER the route
+        // lines and team pins once this async call finally resolves.
         L.geoJSON(geojson, {
           interactive: false,
           style: { fillColor: '#141B20', fillOpacity: 1, color: '#232F36', weight: 0.75 }
-        }).addTo(map)
+        })
+          .addTo(map)
+          .bringToBack()
       })
       .catch(() => {
         // Best-effort — the map (routes, markers, stage dots) still works

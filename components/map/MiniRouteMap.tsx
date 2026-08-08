@@ -45,10 +45,15 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
     fetch('/world-countries.geo.json')
       .then((r) => r.json())
       .then((geojson) => {
+        // Same fix as the full /map page: this resolves after the route/
+        // marker layers below are added, so force it to the back or it'll
+        // render on top of them.
         L.geoJSON(geojson, {
           interactive: false,
           style: { fillColor: '#141B20', fillOpacity: 1, color: '#232F36', weight: 0.5 }
-        }).addTo(map)
+        })
+          .addTo(map)
+          .bringToBack()
       })
       .catch(() => {})
     mapRef.current = map
