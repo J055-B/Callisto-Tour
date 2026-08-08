@@ -12,7 +12,9 @@ function CardShell({ videoUrl, children }: { videoUrl: string; children: React.R
     <div className="relative flex-1 min-w-0 overflow-hidden">
       <video key={videoUrl} className="absolute inset-0 w-full h-full object-cover" src={videoUrl} autoPlay muted loop playsInline />
       <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/55 to-black/15" />
-      <div className="relative h-full flex flex-col justify-between p-4">{children}</div>
+      <div className="relative h-full flex flex-col justify-between p-4" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.85), 0 2px 10px rgba(0,0,0,0.55)' }}>
+        {children}
+      </div>
     </div>
   )
 }
@@ -71,9 +73,9 @@ export default function HeroPanel({ teams }: { teams: LeaderboardEntry[] }) {
                 <span className="text-2xl font-bold text-secondaryText">{lastStage.index}</span>
               </div>
               <div className="mt-1.5 text-sm font-semibold tracking-wide">{(last.currentStage || lastStage.label).toUpperCase()}</div>
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-secondaryText">
+              <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-white font-semibold bg-black/55 backdrop-blur-sm rounded-full px-2.5 py-1">
                 <span className="font-bold text-primaryText">{last.teamCode}</span>
-                <span>·</span>
+                <span className="text-secondaryText">·</span>
                 <span className="inline-flex items-center gap-1.5">
                   {lastFlag && <img src={lastFlag} alt="" className="w-4 h-2.5 rounded-sm object-cover" />}
                   {lastCity}
@@ -116,13 +118,13 @@ export default function HeroPanel({ teams }: { teams: LeaderboardEntry[] }) {
             </div>
             <div className="mt-1.5 text-sm font-semibold tracking-wide">{(leader.currentStage || leaderStage.label).toUpperCase()}</div>
 
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-secondaryText flex-wrap">
+            <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-white font-semibold flex-wrap bg-black/55 backdrop-blur-sm rounded-full px-2.5 py-1">
               <span className="text-yellow font-bold">LEADER: {leader.teamCode}</span>
-              <span>·</span>
+              <span className="text-secondaryText">·</span>
               <span>
                 DAY {day} of {totalDays}
               </span>
-              <span>·</span>
+              <span className="text-secondaryText">·</span>
               <span className="inline-flex items-center gap-1.5">
                 {leaderFlag && <img src={leaderFlag} alt="" className="w-4 h-2.5 rounded-sm object-cover" />}
                 {leaderCity}
@@ -152,7 +154,7 @@ export default function HeroPanel({ teams }: { teams: LeaderboardEntry[] }) {
                 NEXT STAGE {nextStage.index}
               </span>
               <div className="mt-2.5 text-lg font-bold leading-tight">{nextStage.label.toUpperCase()}</div>
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-secondaryText">
+              <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-white font-semibold bg-black/55 backdrop-blur-sm rounded-full px-2.5 py-1">
                 {nextFlag && <img src={nextFlag} alt="" className="w-4 h-2.5 rounded-sm object-cover" />}
                 {nextCity}
               </div>
