@@ -159,44 +159,39 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     const WORLD_BOUNDS = L.latLngBounds([-85, -175], [85, 175])
     const map = L.map(mapDivRef.current, {
       zoomControl: true,
-      // Without these, Leaflet tiles the whole planet side-by-side to fill
-      // the viewport at low zoom — that's the "continents repeated 3x with
-      // white seams" bug. Locking to one world copy fixes it.
+      // Keeps panning to a single world copy — mostly moot now that there's
+      // no tile server to repeat, but still a sane pan limit.
       worldCopyJump: false,
       maxBounds: WORLD_BOUNDS,
-      maxBoundsViscosity: 1
+      maxBoundsViscosity: 1,
+      minZoom: 2
     }).setView([20, 15], 3)
-    // CartoDB Dark Matter — a minimalist black/gray basemap so team route
-    // lines (electric blue) and flight lines (orange) stand out clearly,
-    // instead of competing with a busy, colorful street map underneath.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      noWrap: true,
-      bounds: WORLD_BOUNDS,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-    }).addTo(map)
+    map.getContainer().style.background = '#05090B' // app's page bg — shows through as "ocean"
+
+    // Our own dark country outlines instead of a live tile server. Data:
+    // Natural Earth 110m admin-0 countries (public domain), trimmed to
+    // geometry + name only, bundled at /public/world-countries.geo.json —
+    // no external requests at runtime. This replaces CartoDB Dark Matter,
+    // which needed an Enterprise license for commercial use, repeated the
+    // world at low zoom, and had reference grid lines baked into the tile
+    // images themselves — all gone by construction with a vector layer on
+    // a flat background instead of raster tiles.
+    fetch('/world-countries.geo.json')
+      .then((r) => r.json())
+      .then((geojson) => {
+        L.geoJSON(geojson, {
+          interactive: false,
+          style: { fillColor: '#141B20', fillOpacity: 1, color: '#232F36', weight: 0.75 }
+        }).addTo(map)
+      })
+      .catch(() => {
+        // Best-effort — the map (routes, markers, stage dots) still works
+        // without the country fill if this ever fails to load.
+      })
+
     routeLayerRef.current = L.layerGroup().addTo(map)
     markerLayerRef.current = L.layerGroup().addTo(map)
     mapRef.current = map
-
-    // maxBounds stops panning past the edge of the (single) world map, but
-    // without a minZoom the person can still zoom OUT past the point where
-    // that bounded map is big enough to fill the container — that's the
-    // white empty strip. Compute the smallest zoom where the map still
-    // covers the container's actual pixel size, in both directions, and
-    // don't allow going below it. Recomputed on resize since the container
-    // itself is responsive (vh-based height).
-    function applyMinZoom() {
-      const size = map.getSize()
-      if (size.x === 0 || size.y === 0) return
-      const zoomX = Math.log2(size.x / 256)
-      const zoomY = Math.log2(size.y / 256)
-      const minZoom = Math.max(2, Math.ceil(Math.max(zoomX, zoomY)))
-      map.setMinZoom(minZoom)
-    }
-    applyMinZoom()
-    map.on('resize', applyMinZoom)
-    window.addEventListener('resize', applyMinZoom)
 
     // Open zoomed on wherever the teams currently are, not the whole
     // planet zoomed all the way out — the full route is still reachable by
@@ -217,7 +212,6 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     loadRoadRoute()
 
     return () => {
-      window.removeEventListener('resize', applyMinZoom)
       map.remove()
       mapRef.current = null
     }

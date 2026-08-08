@@ -7,6 +7,7 @@ import { LeaderboardEntry, RoutePoint } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
 import { LOOP_KM } from '../../data/route'
 import { LatLng, pointOnLine, buildSegments, locate, jitter, ROUTE_LINE_COLOR, FLIGHT_LINE_COLOR } from '../../lib/route-geometry'
+import { STAGE_BOUNDARY_POINTS } from '../../lib/milestones'
 
 // A small, non-interactive preview of the route for the "Route Overview"
 // card — plain straight lines between waypoints (no live OSRM fetch, unlike
@@ -30,15 +31,26 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
       keyboard: false,
       touchZoom: false,
       attributionControl: false,
-      // Same fix as the full /map page — without this the world tiles
-      // repeat side-by-side at low zoom ("continents x3 with white seams").
+      // Same fix as the full /map page — mostly moot now that there's no
+      // tile server, but still a sane pan limit.
       worldCopyJump: false,
       maxBounds: WORLD_BOUNDS,
-      maxBoundsViscosity: 1
+      maxBoundsViscosity: 1,
+      minZoom: 1
     }).setView([25, 20], 1)
-    // Same dark, minimalist basemap as the full /map page, so the route
-    // lines read clearly even at this small preview size.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, noWrap: true, bounds: WORLD_BOUNDS }).addTo(map)
+    map.getContainer().style.background = '#05090B' // app's page bg — shows through as "ocean"
+
+    // Same country-outline GeoJSON as the full /map page instead of a live
+    // tile server — see RouteMap.tsx for why.
+    fetch('/world-countries.geo.json')
+      .then((r) => r.json())
+      .then((geojson) => {
+        L.geoJSON(geojson, {
+          interactive: false,
+          style: { fillColor: '#141B20', fillOpacity: 1, color: '#232F36', weight: 0.5 }
+        }).addTo(map)
+      })
+      .catch(() => {})
     mapRef.current = map
 
     const routeLayer = L.layerGroup().addTo(map)
@@ -54,6 +66,19 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
       }).addTo(routeLayer)
     })
 
+    // Same stage boundary dots as the full /map page, just smaller — this
+    // widget is a quick preview, but still benefits from showing where one
+    // stage ends and the next begins.
+    STAGE_BOUNDARY_POINTS.forEach((p) => {
+      L.circleMarker(p.coords, {
+        radius: 3,
+        color: '#FF3B30',
+        weight: 1,
+        fillColor: '#FF3B30',
+        fillOpacity: 1
+      }).addTo(routeLayer)
+    })
+
     const markerLayer = L.layerGroup().addTo(map)
     teams.forEach((team, index) => {
       const wrapped = ((team.totalDistance % LOOP_KM) + LOOP_KM) % LOOP_KM
@@ -66,19 +91,6 @@ export default function MiniRouteMap({ waypoints, teams }: { waypoints: RoutePoi
         : `<div title="${team.teamCode}" style="width:16px;height:16px;border-radius:50%;background:#ffd21f;border:2px solid #14170f;box-shadow:0 2px 5px rgba(0,0,0,.7)"></div>`
       L.marker([lat, lon], { icon: L.divIcon({ className: '', html, iconSize: undefined, iconAnchor: [15, 10] }), zIndexOffset: index }).addTo(markerLayer)
     })
-
-    // Same fix as the full /map page: fitBounds below picks whatever zoom
-    // fits the whole route, which — for this small a container — can land
-    // below the point where the (single, bounded) world map still covers
-    // the container edge-to-edge, leaving a blank strip. Floor it.
-    function applyMinZoom() {
-      const size = map.getSize()
-      if (size.x === 0 || size.y === 0) return
-      const zoomX = Math.log2(size.x / 256)
-      const zoomY = Math.log2(size.y / 256)
-      map.setMinZoom(Math.max(1, Math.ceil(Math.max(zoomX, zoomY))))
-    }
-    applyMinZoom()
 
     const allCoords: LatLng[] = waypoints.filter((w) => w.coords).map((w) => w.coords as LatLng)
     if (allCoords.length) map.fitBounds(L.latLngBounds(allCoords), { padding: [8, 8] })
