@@ -3,7 +3,7 @@ import React from 'react'
 import { Trophy, Target, Bike } from 'lucide-react'
 import { LeaderboardEntry } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
-import { weeklyTargetForToday } from '../../lib/calculations'
+import { weeklyTargetForToday, computeTargetPct } from '../../lib/calculations'
 import { LOOP_KM } from '../../data/route'
 
 const MEDAL_COLOR: Record<number, string> = {
@@ -29,7 +29,7 @@ function progressColor(pct: number, allowOverflow: boolean) {
 const GRID_COLS = '56px 1.2fr 1fr 0.85fr 1.3fr 0.9fr 0.85fr 0.9fr 0.8fr 1fr 0.6fr'
 
 // Team Targets table below — fewer columns, so its own template.
-const TARGETS_GRID_COLS = '56px 1.3fr 0.7fr 1fr 1fr 1fr'
+const TARGETS_GRID_COLS = '56px 1.1fr 0.6fr 0.9fr 0.85fr 0.9fr 1fr'
 
 function journeyPctFor(totalDistance: number) {
   const wrapped = ((totalDistance % LOOP_KM) + LOOP_KM) % LOOP_KM
@@ -176,12 +176,18 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
               <div>DAILY TARGET</div>
               <div>% OF TARGET</div>
               <div>WEEKLY TARGET</div>
+              <div>% OF WEEKLY TARGET</div>
             </div>
             <div className="mt-3 space-y-2">
               {entries.map((e, i) => {
                 const pos = i + 1
                 const isLeader = pos === 1
                 const weeklyTarget = weeklyTargetForToday(e.dailyTarget, e.teamCode)
+                // Uncapped like the daily %, so a team that blows past 100% for
+                // the week keeps climbing instead of flatlining — the whole
+                // point is to see who's actually pulling ahead once everyone
+                // clears their target.
+                const weeklyPct = computeTargetPct(e.weeklyDistance, weeklyTarget)
                 return (
                   <div
                     key={e.id}
@@ -203,6 +209,9 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
                       {e.targetPct.toFixed(1)}%
                     </div>
                     <div>{weeklyTarget.toLocaleString()}</div>
+                    <div className="font-semibold" style={{ color: progressColor(weeklyPct, true) }}>
+                      {weeklyPct.toFixed(1)}%
+                    </div>
                   </div>
                 )
               })}
