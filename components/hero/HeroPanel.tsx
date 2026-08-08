@@ -2,92 +2,80 @@
 import React from 'react'
 import { LeaderboardEntry } from '../../lib/types'
 import { videoUrlForDistance } from '../../lib/city-videos'
-import { nextStageForDistance } from '../../data/route'
-
-interface HeroCardData {
-  badge: string
-  badgeClass: string
-  title: string
-  subtitle: string
-  videoUrl: string
-  progress?: number
-}
-
-function HeroCard({ data }: { data: HeroCardData }) {
-  return (
-    <div className="relative flex-1 min-w-0 min-h-0 overflow-hidden">
-      <video
-        key={data.videoUrl}
-        className="absolute inset-0 w-full h-full object-cover"
-        src={data.videoUrl}
-        autoPlay
-        muted
-        loop
-        playsInline
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10 flex flex-col justify-end p-4">
-        <div className={`inline-block self-start px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${data.badgeClass}`}>
-          {data.badge}
-        </div>
-        <h4 className="text-base font-bold mt-2 leading-tight truncate">{data.title}</h4>
-        <div className="text-xs text-secondaryText mt-0.5 truncate">{data.subtitle}</div>
-        {data.progress !== undefined && (
-          <div className="mt-3">
-            <div className="w-full h-2 bg-white/15 rounded">
-              <div className="h-2 bg-yellow rounded" style={{ width: `${Math.min(100, data.progress).toFixed(1)}%` }} />
-            </div>
-            <div className="text-xs text-yellow font-bold mt-1">{data.progress.toFixed(1)}%</div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+import { flagUrl } from '../../lib/flags'
+import { tourDayInfo } from '../../lib/calculations'
+import { MILESTONE_STAGES, milestonePositionForDistance } from '../../lib/milestones'
 
 export default function HeroPanel({ teams }: { teams: LeaderboardEntry[] }) {
   if (teams.length === 0) {
     return (
-      <div className="rounded-lg overflow-hidden app-surface h-56 flex items-center justify-center text-secondaryText">
+      <div className="rounded-lg overflow-hidden app-surface h-60 flex items-center justify-center text-secondaryText">
         TOUR DE CALLISTO
       </div>
     )
   }
 
   const leader = teams[0]
-  const last = teams[teams.length - 1]
-  const next = nextStageForDistance(leader.totalDistance)
-
-  const cards: HeroCardData[] = [
-    {
-      badge: 'LAST PLACE',
-      badgeClass: 'bg-elevated text-secondaryText border border-border',
-      title: last.teamCode,
-      subtitle: last.currentStage ? last.currentStage.toUpperCase() : 'LIVE ROUTE',
-      videoUrl: videoUrlForDistance(last.totalDistance)
-    },
-    {
-      badge: 'LIVE NOW — LEADER',
-      badgeClass: 'bg-positive text-black',
-      title: leader.teamCode,
-      subtitle: leader.currentStage ? leader.currentStage.toUpperCase() : 'LIVE ROUTE',
-      videoUrl: videoUrlForDistance(leader.totalDistance),
-      progress: leader.targetPct
-    },
-    {
-      badge: 'NEXT STAGE',
-      badgeClass: 'bg-electric/20 text-electric border border-electric/50',
-      title: next.stageLabel.toUpperCase(),
-      subtitle: "COMING UP ON THE LEADER'S ROUTE",
-      videoUrl: videoUrlForDistance(next.cumulativeKm)
-    }
-  ]
+  const { stageIndex, fraction } = milestonePositionForDistance(leader.totalDistance)
+  const stage = MILESTONE_STAGES[stageIndex - 1]
+  const { day, totalDays } = tourDayInfo()
+  const videoUrl = videoUrlForDistance(leader.totalDistance)
+  const flag = flagUrl(leader.countryCode)
+  // "Sofia → Nis" -> "Sofia" — the departure city of the leader's current leg.
+  const cityName = leader.currentStage?.split('→')[0]?.trim() || leader.countryName
+  const progressPct = fraction * 100
 
   return (
-    <div className="rounded-lg overflow-hidden app-surface">
-      <div className="flex flex-col sm:flex-row h-[420px] sm:h-56 divide-y sm:divide-y-0 sm:divide-x divide-border">
-        {cards.map((c, i) => (
-          <HeroCard key={i} data={c} />
-        ))}
+    <div className="rounded-lg overflow-hidden relative h-60 app-surface">
+      <video key={videoUrl} className="absolute inset-0 w-full h-full object-cover" src={videoUrl} autoPlay muted loop playsInline />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-black/10" />
+
+      <div className="relative h-full flex flex-col justify-between p-6">
+        <div>
+          <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-positive via-[#7be04a] to-positive bg-[length:250%_100%] animate-liveBadge text-black px-3 py-1 rounded-full text-xs font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-black animate-liveDot" />
+            LIVE NOW
+          </div>
+
+          <div className="mt-3 leading-none flex items-center flex-wrap gap-x-3 gap-y-1.5">
+            <span>
+              <span className="text-4xl font-bold">STAGE </span>
+              <span className="text-4xl font-bold text-yellow">{stage.index}</span>
+            </span>
+            {stage.isPowerStage && (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide bg-electric/20 text-electric border border-electric/50">
+                {stage.powerLabel}
+              </span>
+            )}
+          </div>
+          <div className="mt-1.5 text-base font-semibold tracking-wide">{(leader.currentStage || stage.label).toUpperCase()}</div>
+
+          <div className="mt-3 flex items-center gap-2 text-sm text-secondaryText flex-wrap">
+            <span className="text-yellow font-bold">LEADER: {leader.teamCode}</span>
+            <span>·</span>
+            <span>
+              DAY {day} of {totalDays}
+            </span>
+            <span>·</span>
+            <span className="inline-flex items-center gap-1.5">
+              {flag && <img src={flag} alt="" className="w-4 h-2.5 rounded-sm object-cover" />}
+              {cityName}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-secondaryText tracking-widest">STAGE PROGRESS</span>
+            <span className="text-sm text-positive font-bold">{progressPct.toFixed(1)}%</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2 bg-white/15 rounded-full overflow-hidden">
+              <div className="h-full bg-positive rounded-full" style={{ width: `${Math.min(100, progressPct).toFixed(1)}%` }} />
+            </div>
+            <span className="text-xs text-secondaryText whitespace-nowrap">{stage.widthKm.toLocaleString()} KM</span>
+          </div>
+        </div>
       </div>
     </div>
   )

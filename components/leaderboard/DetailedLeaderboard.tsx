@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { Trophy } from 'lucide-react'
+import { Trophy, Target, Bike } from 'lucide-react'
 import { LeaderboardEntry } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
 import { weeklyTargetForToday } from '../../lib/calculations'
@@ -46,9 +46,51 @@ function Position({ pos }: { pos: number }) {
   )
 }
 
+// Icon badge + title + subtitle + a gradient underline that fades out
+// (instead of a flat rule) — used for both the LEADERBOARD and TEAM
+// TARGETS section headers below, each with its own accent color so they
+// read as distinct at a glance.
+function SectionHeader({ icon, accent, title, subtitle }: { icon: React.ReactNode; accent: string; title: string; subtitle: string }) {
+  return (
+    <div className="mb-4">
+      <div className="flex items-center gap-2.5">
+        <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${accent}1F`, border: `1px solid ${accent}59` }}>
+          {icon}
+        </span>
+        <div>
+          <div className="text-lg font-bold tracking-wide">{title}</div>
+          <div className="text-xs text-secondaryText mt-0.5">{subtitle}</div>
+        </div>
+      </div>
+      <div className="h-0.5 mt-3 rounded-full" style={{ background: `linear-gradient(90deg, ${accent} 0%, ${accent}26 40%, transparent 75%)` }} />
+    </div>
+  )
+}
+
+// Divider between the two sections — a centered ring icon on a fading line,
+// instead of a plain gap, so the break between "ranking" and "targets"
+// reads as an intentional beat rather than empty space.
+function SectionDivider() {
+  return (
+    <div className="flex items-center gap-3.5 my-7">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent to-border" />
+      <span className="w-8 h-8 rounded-full bg-elevated border border-border flex items-center justify-center shrink-0 text-secondaryText">
+        <Bike size={15} />
+      </span>
+      <div className="flex-1 h-px bg-gradient-to-l from-transparent to-border" />
+    </div>
+  )
+}
+
 export default function DetailedLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
   return (
-    <div className="space-y-6">
+    <div>
+      <SectionHeader
+        icon={<Trophy size={16} color="#FFD400" />}
+        accent="#FFD400"
+        title="LEADERBOARD"
+        subtitle="Live team standings, updated in real time"
+      />
       {/* Extended table — % OF TARGET and % OF JOURNEY columns added */}
       <div className="overflow-x-auto">
         <div className="min-w-[1100px]">
@@ -115,9 +157,16 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
         </div>
       </div>
 
+      <SectionDivider />
+
       {/* Per-team target table — same row/column style as the leaderboard above */}
       <div>
-        <h3 className="text-base font-semibold mb-3">Team Targets</h3>
+        <SectionHeader
+          icon={<Target size={16} color="#2DD4BF" />}
+          accent="#2DD4BF"
+          title="TEAM TARGETS"
+          subtitle="Daily pace vs weekly pace, per team"
+        />
         <div className="overflow-x-auto">
           <div className="min-w-[700px]">
             <div className="grid gap-4 px-4 pb-1 text-xs font-bold uppercase tracking-wider text-secondaryText" style={{ gridTemplateColumns: TARGETS_GRID_COLS }}>
@@ -132,7 +181,7 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
               {entries.map((e, i) => {
                 const pos = i + 1
                 const isLeader = pos === 1
-                const weeklyTarget = weeklyTargetForToday(e.dailyTarget)
+                const weeklyTarget = weeklyTargetForToday(e.dailyTarget, e.teamCode)
                 return (
                   <div
                     key={e.id}

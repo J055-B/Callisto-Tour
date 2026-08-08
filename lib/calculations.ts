@@ -32,10 +32,13 @@ function ratePerPercent(dateStr: string) {
 // Madagascar (merged into "MADA + FR" — the Target sheet only gives that
 // pair one combined target), which actually works through that block and
 // gets double the shared target to compensate.
-function isMadaSharedWeekendDay(teamCode: string, dateStr: string) {
-  if (teamCode !== 'MADA + FR') return false
+function isWeekendDate(dateStr: string) {
   const weekday = new Date(dateStr + 'T00:00:00Z').getUTCDay() // 0=Sun … 5=Fri, 6=Sat
   return weekday === 0 || weekday === 5 || weekday === 6
+}
+
+function isMadaSharedWeekendDay(teamCode: string, dateStr: string) {
+  return teamCode === 'MADA + FR' && isWeekendDate(dateStr)
 }
 
 function dailyTargetForDate(team: Team, dateStr: string) {
@@ -74,18 +77,47 @@ function eachDateBetween(start: string, end: string) {
   return dates
 }
 
-// Total km a team would need to hit "on pace" for the CURRENT calendar week
-// if every remaining day counted a fresh dailyTarget (7 days normally, 8 in
-// Week 3) — used by the /leaderboard page's per-team stat cards. Clamped to
+// Fri+Sat+Sun collapse into a SINGLE unit within the week — teams don't get
+// 3x the weekly target for a weekend they don't work. MADA + FR actually
+// works the weekend (see isMadaSharedWeekendDay), so its weekend unit counts
+// at 1.8x instead of 1x. Every other day in the week (Mon-Thu, plus Week 3's
+// trailing Monday) counts as its own full unit.
+function weekUnitsFor(week: { start: string; end: string }, teamCode: string) {
+  const weekendMultiplier = teamCode === 'MADA + FR' ? 1.8 : 1
+  let units = 0
+  let weekendCounted = false
+  for (const dateStr of eachDateBetween(week.start, week.end)) {
+    if (isWeekendDate(dateStr)) {
+      if (!weekendCounted) {
+        units += weekendMultiplier
+        weekendCounted = true
+      }
+    } else {
+      units += 1
+    }
+  }
+  return units
+}
+
+// Total km a team would need to hit "on pace" for the CURRENT calendar
+// week — used by the /leaderboard page's per-team stat cards. Clamped to
 // the tour's date range so it still returns something sensible before
-// Aug 10 / after Aug 31. Doesn't special-case MADA's weekend doubling (see
-// isMadaSharedWeekendDay) — this is a simple weekly-pace figure, not a
-// day-by-day recompute.
-export function weeklyTargetForToday(dailyTarget: number, today: Date = new Date()) {
+// Aug 10 / after Aug 31. See weekUnitsFor for the Fri/Sat/Sun-as-one-day
+// (or ×1.8 for MADA + FR) rule.
+export function weeklyTargetForToday(dailyTarget: number, teamCode: string, today: Date = new Date()) {
   const todayStr = clampToTourRange(today.toISOString().slice(0, 10))
   const week = weekFor(todayStr) ?? WEEKS[WEEKS.length - 1]
-  const days = eachDateBetween(week.start, week.end).length
-  return dailyTarget * days
+  return dailyTarget * weekUnitsFor(week, teamCode)
+}
+
+// "DAY x of N" for the Hero panel — N is every calendar day from Aug 10 to
+// Aug 31 inclusive (22 days). Clamped so it still reads sensibly before the
+// Tour starts (DAY 1) or after it ends (DAY N).
+export function tourDayInfo(today: Date = new Date()) {
+  const allDays = eachDateBetween(TOUR_START, TOUR_END)
+  const todayStr = clampToTourRange(today.toISOString().slice(0, 10))
+  const idx = allDays.indexOf(todayStr)
+  return { day: idx === -1 ? 1 : idx + 1, totalDays: allDays.length }
 }
 
 interface TeamMetrics {
