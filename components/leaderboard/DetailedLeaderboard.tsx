@@ -7,6 +7,7 @@ import { weeklyTargetForToday, computeTargetPct } from '../../lib/calculations'
 import { LOOP_KM } from '../../data/route'
 import { getRole, ROLE_CHANGED_EVENT } from '../../lib/session'
 import { TEST_CELEBRATION_EVENT } from '../../lib/celebration-events'
+import WelcomeEmailButton from './WelcomeEmailButton'
 
 const MEDAL_COLOR: Record<number, string> = {
   1: '#FFD700', // gold
@@ -122,14 +123,17 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
         subtitle="Live team standings, updated in real time"
         action={
           isAdmin && (
-            <button
-              onClick={() => window.dispatchEvent(new Event(TEST_CELEBRATION_EVENT))}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-bold text-secondaryText border border-border hover:text-yellow hover:border-yellow transition"
-              title="Preview the leader-change video/message"
-            >
-              <PlayCircle size={13} />
-              TEST CELEBRATION
-            </button>
+            <div className="flex items-center gap-2">
+              <WelcomeEmailButton />
+              <button
+                onClick={() => window.dispatchEvent(new Event(TEST_CELEBRATION_EVENT))}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-bold text-secondaryText border border-border hover:text-yellow hover:border-yellow transition"
+                title="Preview the leader-change video/message"
+              >
+                <PlayCircle size={13} />
+                TEST CELEBRATION
+              </button>
+            </div>
           )
         }
       />
