@@ -2,6 +2,7 @@ import React from 'react'
 import Sidebar from '../../components/layout/Sidebar'
 import Header from '../../components/layout/Header'
 import MonitorMode from '../../components/layout/MonitorMode'
+import LeaderChangeCelebration from '../../components/layout/LeaderChangeCelebration'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="p-6">{children}</main>
       </div>
       <MonitorMode />
+      <LeaderChangeCelebration />
     </div>
   )
 }
