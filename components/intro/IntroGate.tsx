@@ -40,27 +40,41 @@ export default function IntroGate() {
     }
   }
 
-  return (
-    <div className="relative min-h-screen w-full overflow-hidden">
-      <img src="/images/intro-bg.jpg" alt="Tour de Callisto" className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+  // The image is 1672x941 — instead of object-cover (fills the screen but
+  // crops whatever doesn't fit that aspect ratio, which is what was
+  // cutting off the top/bottom), this sizes a container to the exact same
+  // ratio, as large as fits the viewport (letterboxed on whichever side
+  // doesn't match), so the full image is always visible and the ENTER/
+  // ADMIN buttons — positioned as % of THIS container, not the raw
+  // viewport — stay locked to the same spot on the image at every screen size.
+  const frameStyle: React.CSSProperties = {
+    width: 'min(100vw, calc(100vh * (1672 / 941)))',
+    height: 'min(100vh, calc(100vw * (941 / 1672)))'
+  }
 
-      {/* ENTER + Admin lock — positioned in the open space between the
-          rider's legs / bike frame, matching the reference crop. */}
-      <div className="absolute flex flex-col items-center gap-4" style={{ left: '50%', top: '63%', transform: 'translate(-50%, -50%)' }}>
-        <button
-          onClick={enterAsGuest}
-          className="px-10 py-3 rounded-full bg-yellow text-black font-extrabold text-xl italic tracking-wide shadow-[0_0_30px_-4px_rgba(255,212,0,0.85)] hover:shadow-[0_0_44px_-2px_rgba(255,212,0,1)] hover:scale-105 transition-all"
-        >
-          ENTER
-        </button>
-        <button
-          onClick={() => setShowAdminModal(true)}
-          className="flex items-center gap-1.5 text-yellow/80 hover:text-yellow text-xs font-semibold tracking-widest transition-colors"
-        >
-          <Lock size={14} />
-          ADMIN
-        </button>
+  return (
+    <div className="relative min-h-screen w-full overflow-hidden bg-page flex items-center justify-center">
+      <div className="relative" style={frameStyle}>
+        <img src="/images/intro-bg.jpg" alt="Tour de Callisto" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+
+        {/* ENTER + Admin lock — positioned in the open space between the
+            rider's legs / bike frame, matching the reference crop. */}
+        <div className="absolute flex flex-col items-center gap-4" style={{ left: '50%', top: '63%', transform: 'translate(-50%, -50%)' }}>
+          <button
+            onClick={enterAsGuest}
+            className="px-10 py-3 rounded-full bg-yellow text-black font-extrabold text-xl italic tracking-wide shadow-[0_0_30px_-4px_rgba(255,212,0,0.85)] hover:shadow-[0_0_44px_-2px_rgba(255,212,0,1)] hover:scale-105 transition-all"
+          >
+            ENTER
+          </button>
+          <button
+            onClick={() => setShowAdminModal(true)}
+            className="flex items-center gap-1.5 text-yellow/80 hover:text-yellow text-xs font-semibold tracking-widest transition-colors"
+          >
+            <Lock size={14} />
+            ADMIN
+          </button>
+        </div>
       </div>
 
       {showAdminModal && (
