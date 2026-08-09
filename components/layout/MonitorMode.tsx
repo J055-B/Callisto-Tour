@@ -45,7 +45,7 @@ export default function MonitorMode() {
     }
 
     function goHome() {
-      router.replace('/')
+      router.replace('/dashboard')
       schedule(HOME_DWELL_MS, startCycling)
     }
 

@@ -6,7 +6,7 @@ import { Activity, BarChart3, Map, Trophy, Gift, Info, Tv } from 'lucide-react'
 import { MONITOR_MODE_STORAGE_KEY, MONITOR_MODE_EVENT } from '../../lib/monitor-mode'
 
 const items = [
-  { href: '/', label: 'Race', icon: Activity },
+  { href: '/dashboard', label: 'Race', icon: Activity },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/map', label: 'Map', icon: Map },
   { href: '/teams', label: 'Teams', icon: BarChart3 },
