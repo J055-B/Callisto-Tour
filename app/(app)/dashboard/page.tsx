@@ -1,4 +1,3 @@
-import React from 'react'
 import LiveLeaderboard from '../../../components/leaderboard/LiveLeaderboard'
 import LiveStatusBadge from '../../../components/leaderboard/LiveStatusBadge'
 import HeroPanel from '../../../components/hero/HeroPanel'

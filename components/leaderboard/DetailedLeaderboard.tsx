@@ -1,10 +1,12 @@
 "use client"
-import React from 'react'
-import { Trophy, Target, Bike } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { Trophy, Target, Bike, PlayCircle } from 'lucide-react'
 import { LeaderboardEntry } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
 import { weeklyTargetForToday, computeTargetPct } from '../../lib/calculations'
 import { LOOP_KM } from '../../data/route'
+import { getRole, ROLE_CHANGED_EVENT } from '../../lib/session'
+import { TEST_CELEBRATION_EVENT } from '../../lib/celebration-events'
 
 const MEDAL_COLOR: Record<number, string> = {
   1: '#FFD700', // gold
@@ -50,17 +52,32 @@ function Position({ pos }: { pos: number }) {
 // (instead of a flat rule) — used for both the LEADERBOARD and TEAM
 // TARGETS section headers below, each with its own accent color so they
 // read as distinct at a glance.
-function SectionHeader({ icon, accent, title, subtitle }: { icon: React.ReactNode; accent: string; title: string; subtitle: string }) {
+function SectionHeader({
+  icon,
+  accent,
+  title,
+  subtitle,
+  action
+}: {
+  icon: React.ReactNode
+  accent: string
+  title: string
+  subtitle: string
+  action?: React.ReactNode
+}) {
   return (
     <div className="mb-4">
-      <div className="flex items-center gap-2.5">
-        <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${accent}1F`, border: `1px solid ${accent}59` }}>
-          {icon}
-        </span>
-        <div>
-          <div className="text-lg font-bold tracking-wide">{title}</div>
-          <div className="text-xs text-secondaryText mt-0.5">{subtitle}</div>
+      <div className="flex items-center justify-between gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${accent}1F`, border: `1px solid ${accent}59` }}>
+            {icon}
+          </span>
+          <div>
+            <div className="text-lg font-bold tracking-wide">{title}</div>
+            <div className="text-xs text-secondaryText mt-0.5">{subtitle}</div>
+          </div>
         </div>
+        {action}
       </div>
       <div className="h-0.5 mt-3 rounded-full" style={{ background: `linear-gradient(90deg, ${accent} 0%, ${accent}26 40%, transparent 75%)` }} />
     </div>
@@ -83,6 +100,19 @@ function SectionDivider() {
 }
 
 export default function DetailedLeaderboard({ entries }: { entries: LeaderboardEntry[] }) {
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const read = () => setIsAdmin(getRole() === 'admin')
+    read()
+    window.addEventListener(ROLE_CHANGED_EVENT, read)
+    window.addEventListener('storage', read)
+    return () => {
+      window.removeEventListener(ROLE_CHANGED_EVENT, read)
+      window.removeEventListener('storage', read)
+    }
+  }, [])
+
   return (
     <div>
       <SectionHeader
@@ -90,6 +120,18 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
         accent="#FFD400"
         title="LEADERBOARD"
         subtitle="Live team standings, updated in real time"
+        action={
+          isAdmin && (
+            <button
+              onClick={() => window.dispatchEvent(new Event(TEST_CELEBRATION_EVENT))}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-bold text-secondaryText border border-border hover:text-yellow hover:border-yellow transition"
+              title="Preview the leader-change video/message"
+            >
+              <PlayCircle size={13} />
+              TEST CELEBRATION
+            </button>
+          )
+        }
       />
       {/* Extended table — % OF TARGET and % OF JOURNEY columns added */}
       <div className="overflow-x-auto">

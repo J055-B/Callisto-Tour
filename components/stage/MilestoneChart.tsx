@@ -1,5 +1,5 @@
 "use client"
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
 import { LeaderboardEntry } from '../../lib/types'
 import { MILESTONE_STAGES, milestonePositionForDistance } from '../../lib/milestones'

@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Clock } from 'lucide-react'
 
 const BRAND_INTERVAL_MS = 20000 // how often the brand banner plays

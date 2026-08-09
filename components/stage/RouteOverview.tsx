@@ -1,4 +1,3 @@
-import React from 'react'
 import Link from 'next/link'
 import { LeaderboardEntry, RoutePoint } from '../../lib/types'
 import MiniRouteMapLoader from '../map/MiniRouteMapLoader'

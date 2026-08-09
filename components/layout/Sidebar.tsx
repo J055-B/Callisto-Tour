@@ -1,9 +1,10 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Activity, BarChart3, Map, Trophy, Gift, Info, Tv } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Activity, BarChart3, Map, Trophy, Gift, Info, Tv, LogOut } from 'lucide-react'
 import { MONITOR_MODE_STORAGE_KEY, MONITOR_MODE_EVENT } from '../../lib/monitor-mode'
+import { clearRole } from '../../lib/session'
 
 const items = [
   { href: '/dashboard', label: 'Race', icon: Activity },
@@ -16,6 +17,7 @@ const items = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [monitorMode, setMonitorMode] = useState(false)
 
   useEffect(() => {
@@ -29,8 +31,13 @@ export default function Sidebar() {
     window.dispatchEvent(new Event(MONITOR_MODE_EVENT))
   }
 
+  function logout() {
+    clearRole()
+    router.push('/')
+  }
+
   return (
-    <aside className="w-24 h-screen flex flex-col items-center py-6 gap-6 bg-elevated border-r border-border">
+    <aside className="w-24 h-screen sticky top-0 shrink-0 flex flex-col items-center py-6 gap-6 bg-elevated border-r border-border overflow-y-auto">
       <div className="w-12 h-12 rounded-full bg-yellow flex items-center justify-center text-black font-bold text-xl">T</div>
       <nav className="flex-1 flex flex-col gap-3">
         {items.map((it) => {
@@ -63,7 +70,15 @@ export default function Sidebar() {
       >
         <Tv size={18} />
       </button>
-      <div className="text-center text-[10px] text-secondaryText leading-4 px-2">THE JOURNEY<br />NEVER STOPS</div>
+      <button
+        onClick={logout}
+        className="flex h-12 w-12 items-center justify-center rounded-full text-secondaryText hover:bg-negative/10 hover:text-negative transition-colors"
+        aria-label="Log out"
+        title="Log out — back to the intro screen"
+      >
+        <LogOut size={18} />
+      </button>
+      <div className="text-center text-[10px] text-secondaryText leading-4 px-2 shrink-0">THE JOURNEY<br />NEVER STOPS</div>
     </aside>
   )
 }

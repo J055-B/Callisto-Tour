@@ -1,4 +1,3 @@
-import React from 'react'
 import { getTeams } from '../../../lib/data-source'
 
 export const dynamic = 'force-dynamic'

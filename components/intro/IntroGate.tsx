@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Lock, X } from 'lucide-react'
+import { ROLE_STORAGE_KEY } from '../../lib/session'
 
 const ADMIN_USER = 'Admin'
 const ADMIN_PASS = 'Callisto2026'
@@ -32,7 +33,7 @@ export default function IntroGate() {
       // a substitute for real auth if this ever needs to guard something
       // sensitive.
       try {
-        localStorage.setItem('callisto:role', 'admin')
+        localStorage.setItem(ROLE_STORAGE_KEY, 'admin')
       } catch {}
       router.push('/dashboard')
     } else {

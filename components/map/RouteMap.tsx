@@ -2,7 +2,7 @@
 
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { LeaderboardEntry, RoutePoint } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
@@ -18,6 +18,7 @@ import {
   FLIGHT_LINE_COLOR
 } from '../../lib/route-geometry'
 import { MILESTONE_STAGES, milestonePositionForDistance, STAGE_BOUNDARY_POINTS } from '../../lib/milestones'
+import { getRole, ROLE_CHANGED_EVENT } from '../../lib/session'
 
 // ---- OSRM road-routing (this full interactive map only — see MiniRouteMap for the lightweight card preview) ----
 
@@ -108,6 +109,38 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
 
   const [simulate, setSimulate] = useState(false)
   const [simKm, setSimKm] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  // TEST MODE is an internal QA tool — only Admin should see it.
+  useEffect(() => {
+    const read = () => setIsAdmin(getRole() === 'admin')
+    read()
+    window.addEventListener(ROLE_CHANGED_EVENT, read)
+    window.addEventListener('storage', read)
+    return () => {
+      window.removeEventListener(ROLE_CHANGED_EVENT, read)
+      window.removeEventListener('storage', read)
+    }
+  }, [])
+
+  // Same "zoom to wherever the teams currently are" logic used on first
+  // mount — pulled out so the RESET VIEW button can re-run it on demand.
+  function resetView() {
+    const map = mapRef.current
+    if (!map) return
+    const initialPositions: LatLng[] = teams.map((team) => {
+      const wrapped = ((team.totalDistance % LOOP_KM) + LOOP_KM) % LOOP_KM
+      const { segmentIndex, fraction } = locate(segments, wrapped)
+      const seg = segments[segmentIndex]
+      return pointOnLine(seg.map((w) => w.coords as LatLng), fraction)
+    })
+    if (initialPositions.length) {
+      map.fitBounds(L.latLngBounds(initialPositions), { padding: [80, 80], maxZoom: 6 })
+    } else {
+      const allCoords: LatLng[] = waypoints.filter((w) => w.coords).map((w) => w.coords as LatLng)
+      if (allCoords.length) map.fitBounds(L.latLngBounds(allCoords), { padding: [30, 30] })
+    }
+  }
 
   const avgDailyTarget = useMemo(() => {
     const withTarget = teams.filter((t) => t.dailyTarget > 0)
@@ -159,6 +192,11 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     const WORLD_BOUNDS = L.latLngBounds([-85, -175], [85, 175])
     const map = L.map(mapDivRef.current, {
       zoomControl: true,
+      // Scroll-wheel zoom fights with scrolling the page itself once the
+      // map fills the screen — off. Arrow-key panning (keyboard) and the
+      // +/- buttons (zoomControl) still work.
+      scrollWheelZoom: false,
+      keyboard: true,
       // Keeps panning to a single world copy — mostly moot now that there's
       // no tile server to repeat, but still a sane pan limit.
       worldCopyJump: false,
@@ -201,19 +239,8 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
 
     // Open zoomed on wherever the teams currently are, not the whole
     // planet zoomed all the way out — the full route is still reachable by
-    // scrolling/panning out.
-    const initialPositions: LatLng[] = teams.map((team) => {
-      const wrapped = ((team.totalDistance % LOOP_KM) + LOOP_KM) % LOOP_KM
-      const { segmentIndex, fraction } = locate(segments, wrapped)
-      const seg = segments[segmentIndex]
-      return pointOnLine(seg.map((w) => w.coords as LatLng), fraction)
-    })
-    if (initialPositions.length) {
-      map.fitBounds(L.latLngBounds(initialPositions), { padding: [80, 80], maxZoom: 6 })
-    } else {
-      const allCoords: LatLng[] = waypoints.filter((w) => w.coords).map((w) => w.coords as LatLng)
-      if (allCoords.length) map.fitBounds(L.latLngBounds(allCoords), { padding: [30, 30] })
-    }
+    // scrolling/panning out (or the RESET VIEW button).
+    resetView()
 
     loadRoadRoute()
 
@@ -320,6 +347,13 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     <div className="space-y-4">
       <div className="relative">
         <div ref={mapDivRef} className="h-[78vh] min-h-[620px] w-full rounded-lg overflow-hidden border border-border" />
+        <button
+          onClick={resetView}
+          className="absolute top-[84px] left-[10px] z-[1000] bg-elevated/90 backdrop-blur-sm border border-border rounded-md px-2.5 py-1.5 text-[11px] font-bold text-secondaryText hover:text-yellow hover:border-yellow transition flex items-center gap-1"
+          title="Reset the map back to where the teams are"
+        >
+          ⟲ RESET VIEW
+        </button>
         {focusedTeam && (
           <div className="absolute left-4 bottom-4 z-[1000] bg-black/75 backdrop-blur-sm rounded-lg px-4 py-3 border border-border">
             <div className="text-sm font-bold">{focusedTeam.teamCode}</div>
@@ -343,28 +377,30 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
         </button>
       </div>
 
-      <div className="rounded-lg p-4 border border-orange-400/50 bg-orange-400/10">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <label className="flex items-center gap-2 text-sm font-bold text-orange-300">
-            <input type="checkbox" checked={simulate} onChange={(e) => setSimulate(e.target.checked)} />
-            TEST MODE — preview positions before the Tour starts
-          </label>
-          <span className="text-xs text-secondaryText">Doesn't affect real data</span>
+      {isAdmin && (
+        <div className="rounded-lg p-4 border border-orange-400/50 bg-orange-400/10">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <label className="flex items-center gap-2 text-sm font-bold text-orange-300">
+              <input type="checkbox" checked={simulate} onChange={(e) => setSimulate(e.target.checked)} />
+              TEST MODE — preview positions before the Tour starts
+            </label>
+            <span className="text-xs text-secondaryText">Admin only · Doesn't affect real data</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={LOOP_KM}
+            step={10}
+            value={simKm}
+            disabled={!simulate}
+            onChange={(e) => setSimKm(Number(e.target.value))}
+            className="w-full"
+          />
+          <div className="text-xs text-secondaryText mt-1">
+            {simulate ? `Simulated leader pace: ${simKm.toLocaleString()} km / ${LOOP_KM.toLocaleString()} km` : 'Enable to drag teams along the route for a preview'}
+          </div>
         </div>
-        <input
-          type="range"
-          min={0}
-          max={LOOP_KM}
-          step={10}
-          value={simKm}
-          disabled={!simulate}
-          onChange={(e) => setSimKm(Number(e.target.value))}
-          className="w-full"
-        />
-        <div className="text-xs text-secondaryText mt-1">
-          {simulate ? `Simulated leader pace: ${simKm.toLocaleString()} km / ${LOOP_KM.toLocaleString()} km` : 'Enable to drag teams along the route for a preview'}
-        </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { randomLeaderMessage } from '../../lib/leader-messages'
+import { TEST_CELEBRATION_EVENT } from '../../lib/celebration-events'
 
 const POLL_MS = 30000 // how often to check for a new leader
 const CELEBRATION_MS = 8000 // how long the overlay stays up
@@ -39,11 +40,30 @@ export default function LeaderChangeCelebration() {
       }
     }
 
+    // Admin's "Test celebration" button — plays it right now with whoever
+    // the real current leader is, skipping the wait for a real change.
+    async function testTrigger() {
+      try {
+        const res = await fetch('/api/leader', { cache: 'no-store' })
+        const data: { teamCode: string | null } = await res.json()
+        const teamCode = data.teamCode ?? 'YOUR TEAM'
+        setCelebration({ teamCode, message: randomLeaderMessage(teamCode) })
+        if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+        hideTimerRef.current = setTimeout(() => setCelebration(null), CELEBRATION_MS)
+      } catch {
+        setCelebration({ teamCode: 'YOUR TEAM', message: randomLeaderMessage('YOUR TEAM') })
+        if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+        hideTimerRef.current = setTimeout(() => setCelebration(null), CELEBRATION_MS)
+      }
+    }
+
     poll()
     const id = setInterval(poll, POLL_MS)
+    window.addEventListener(TEST_CELEBRATION_EVENT, testTrigger)
     return () => {
       clearInterval(id)
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+      window.removeEventListener(TEST_CELEBRATION_EVENT, testTrigger)
     }
   }, [])
 

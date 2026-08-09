@@ -1,5 +1,4 @@
 "use client"
-import React from 'react'
 import { Trophy } from 'lucide-react'
 import { LeaderboardEntry } from '../../lib/types'
 import { flagUrl } from '../../lib/flags'
