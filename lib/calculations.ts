@@ -212,3 +212,55 @@ export function computeLeaderboard(teams: Team[], today: Date = new Date()) {
   }
   return entries
 }
+
+export interface WeeklyWinner {
+  weekIndex: number
+  weekLabel: string
+  start: string
+  end: string
+  // 'completed': the week is fully over, winner is final. 'in-progress':
+  // still running, "winner" is just whoever's ahead right now (can still
+  // change). 'upcoming': hasn't started, no leaderboard data to show yet.
+  status: 'completed' | 'in-progress' | 'upcoming'
+  winner?: { teamCode: string; weeklyDistance: number }
+}
+
+// Once a week ends, its winner is permanent — re-running this later for a
+// past week always recomputes the exact same answer from that week's
+// dailyHistory, so nothing needs to be separately "saved" anywhere; the
+// sheet IS the record. Used by the /prizes page.
+export function computeWeeklyWinners(teams: Team[], today: Date = new Date()): WeeklyWinner[] {
+  const todayStr = today.toISOString().slice(0, 10)
+
+  return WEEKS.map((week, i) => {
+    const status: WeeklyWinner['status'] = todayStr > week.end ? 'completed' : todayStr >= week.start ? 'in-progress' : 'upcoming'
+
+    let winner: WeeklyWinner['winner']
+    if (status !== 'upcoming') {
+      const lastDay = todayStr < week.end ? todayStr : week.end
+      let best: WeeklyWinner['winner']
+      for (const team of teams) {
+        const salesByDate = new Map((team.dailyHistory ?? []).map((d) => [d.date, d.sales]))
+        let weeklyDistance = 0
+        if (lastDay >= week.start) {
+          for (const date of eachDateBetween(week.start, lastDay)) {
+            weeklyDistance += kmForDay(team, date, salesByDate.get(date) ?? 0)
+          }
+        }
+        if (!best || weeklyDistance > best.weeklyDistance) {
+          best = { teamCode: team.teamCode, weeklyDistance }
+        }
+      }
+      winner = best
+    }
+
+    return {
+      weekIndex: i + 1,
+      weekLabel: `Week ${i + 1}`,
+      start: week.start,
+      end: week.end,
+      status,
+      winner
+    }
+  })
+}
