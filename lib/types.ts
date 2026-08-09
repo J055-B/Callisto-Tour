@@ -9,9 +9,7 @@ export interface Team {
   language: string
   dailyTarget: number
   salesToday: number
-  /** Full-route km target shown in the UI (falls back to the loop's total km when unset). Not the sales quota. */
-  totalTarget?: number
-  /** Monthly sales quota from the Target sheet's "Targ" column — informational only, not used in km math. */
+  /** Total sales quota from the Target sheet's "Targ" column — in sale count (FTD) or USD (RET), NOT km. Informational only, not used in km math. */
   monthlyTarget?: number
   countryCode: string
   countryName: string
