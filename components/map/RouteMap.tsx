@@ -249,7 +249,12 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
     // stage hands off to the next along what would otherwise be one long
     // undifferentiated line.
     STAGE_BOUNDARY_POINTS.forEach((p) => {
-      const label = p.stageIndex === 0 ? `${p.name} — Tour start` : `${p.name} — Stage ${p.stageIndex} end / Stage ${p.stageIndex === MILESTONE_STAGES.length ? 1 : p.stageIndex + 1} start`
+      const label =
+        p.stageIndex === 0
+          ? `${p.name} — Tour start`
+          : p.stageIndex === null
+          ? `${p.name} — arrival after flight`
+          : `${p.name} — Stage ${p.stageIndex} end / Stage ${p.stageIndex === MILESTONE_STAGES.length ? 1 : p.stageIndex + 1} start`
       L.circleMarker(p.coords, {
         radius: 7,
         color: '#FF3B30',

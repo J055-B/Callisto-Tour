@@ -127,17 +127,21 @@ export function milestonePositionForDistance(totalDistance: number) {
 }
 
 export interface StageBoundaryPoint {
-  /** The stage that ENDS here (1-16). 0 = the very first point (Sofia, the tour's overall start). */
-  stageIndex: number
+  /** The stage that ENDS here (1-16). 0 = the very first point (Sofia, the tour's overall start). null = a flight-arrival city that isn't itself a STAGE_DEFS endpoint (e.g. Quebec City, landed mid-Stage 9) — still gets a dot so the dashed flight line doesn't dead-end into nothing. */
+  stageIndex: number | null
   name: string
   countryCode: string
   coords: [number, number]
 }
 
-// The 17 cities where one stage hands off to the next (Sofia + each of the
-// 16 STAGE_DEFS endpoints) — plotted as bigger red dots on the full map so
-// it's visually obvious where each stage starts/ends along the route,
-// instead of one long undifferentiated line. See RouteMap.tsx.
+// The cities where one stage hands off to the next (Sofia + each of the 16
+// STAGE_DEFS endpoints), PLUS every flight-arrival city that isn't already
+// one of those — a flight can land mid-stage (e.g. Quebec City, inside
+// Stage 9's "Quebec City → Toronto"), and without its own dot the dashed
+// flight line just stops with no marker where the drivable road picks back
+// up. Plotted as bigger red dots on the full map so it's visually obvious
+// where each leg starts/ends, instead of one long undifferentiated line.
+// See RouteMap.tsx.
 export const STAGE_BOUNDARY_POINTS: StageBoundaryPoint[] = (() => {
   const first = route[0]
   const points: StageBoundaryPoint[] = [
@@ -148,5 +152,13 @@ export const STAGE_BOUNDARY_POINTS: StageBoundaryPoint[] = (() => {
     if (!wp) return
     points.push({ stageIndex: i + 1, name: wp.name, countryCode: wp.countryCode, coords: wp.coords as [number, number] })
   })
+  // A 0km leg (same cumulativeKm as the previous waypoint) is a flight —
+  // mark its arrival city too, unless it's already in the list above.
+  for (let i = 1; i < route.length; i++) {
+    if (route[i].cumulativeKm !== route[i - 1].cumulativeKm) continue
+    const wp = route[i]
+    const already = points.some((p) => p.coords[0] === wp.coords?.[0] && p.coords[1] === wp.coords?.[1])
+    if (!already) points.push({ stageIndex: null, name: wp.name, countryCode: wp.countryCode, coords: wp.coords as [number, number] })
+  }
   return points
 })()
