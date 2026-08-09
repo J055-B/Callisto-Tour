@@ -41,6 +41,19 @@ function isMadaSharedWeekendDay(teamCode: string, dateStr: string) {
   return teamCode === 'MADA + FR' && isWeekendDate(dateStr)
 }
 
+// Maps a calendar date to its "counting bucket" start — Mon-Thu are each
+// their own bucket; Fri/Sat/Sun collapse into ONE bucket (Friday's date),
+// same grouping as weekUnitsFor's weekly-target rule. Used so "today's"
+// tally (salesToday/targetPct) accumulates across the whole weekend instead
+// of resetting on Saturday and again on Sunday.
+function bucketStartFor(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00Z')
+  const weekday = d.getUTCDay() // 0=Sun … 5=Fri, 6=Sat
+  if (weekday === 6) return new Date(d.getTime() - 1 * 86400000).toISOString().slice(0, 10) // Sat -> Fri
+  if (weekday === 0) return new Date(d.getTime() - 2 * 86400000).toISOString().slice(0, 10) // Sun -> Fri
+  return dateStr
+}
+
 function dailyTargetForDate(team: Team, dateStr: string) {
   return team.dailyTarget * (isMadaSharedWeekendDay(team.teamCode, dateStr) ? 2 : 1)
 }
@@ -147,7 +160,13 @@ function computeTeamMetrics(team: Team, todayStr: string): TeamMetrics {
     }
   }
 
-  const salesToday = salesByDate.get(todayStr) ?? 0
+  // Fri/Sat/Sun accumulate together — "today" on a Saturday means
+  // Friday+Saturday combined, on Sunday it's the whole Fri-Sun block.
+  const bucketStart = bucketStartFor(todayStr)
+  let salesToday = 0
+  for (const date of eachDateBetween(bucketStart, todayStr)) {
+    salesToday += salesByDate.get(date) ?? 0
+  }
   const targetPct = computeTargetPct(salesToday, dailyTargetForDate(team, todayStr))
   const kmToday = kmForDay(team, todayStr, salesToday)
 

@@ -172,6 +172,20 @@ function assignTargets(configs: TeamSheetConfig[], targetRows: TargetRow[]) {
   })
 }
 
+// The tour's very first day only counts sales from 08:00 onward — the Tour
+// launches mid-morning, not at midnight — every day after that is a normal
+// midnight-to-midnight day. Assumes the sheet's "Date" timestamps are
+// already Israel local time, same as everywhere else this file reads that
+// column. See the Aug 2026 "arranca a las 8am" ask.
+const FIRST_TOUR_DAY = '2026-08-10'
+const FIRST_DAY_START_HOUR = 8
+
+function isWithinCountedWindow(date: string, raw: string) {
+  if (date !== FIRST_TOUR_DAY) return true
+  const hour = Number(raw.slice(11, 13))
+  return Number.isFinite(hour) && hour >= FIRST_DAY_START_HOUR
+}
+
 // FTD sheets: every sale row counts as +1 (Full and Partial both count),
 // bucketed by the "Date"/"Conversion Date" column's calendar day. FTD daily
 // targets are a sale COUNT, not money, so this is the right unit for them.
@@ -186,6 +200,7 @@ function buildDailyHistoryByCount(rows: string[][]): { date: string; sales: numb
     const raw = (row[dateIndex] || '').trim()
     const date = raw.slice(0, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue
+    if (!isWithinCountedWindow(date, raw)) continue
     counts.set(date, (counts.get(date) ?? 0) + 1)
   }
 
@@ -211,6 +226,7 @@ function buildDailyHistoryByAmount(rows: string[][]): { date: string; sales: num
     const raw = (row[dateIndex] || '').trim()
     const date = raw.slice(0, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue
+    if (!isWithinCountedWindow(date, raw)) continue
     const amount = parseNumber(row[amountIndex]) ?? 0
     totals.set(date, (totals.get(date) ?? 0) + amount)
   }
