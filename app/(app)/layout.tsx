@@ -3,6 +3,7 @@ import Sidebar from '../../components/layout/Sidebar'
 import Header from '../../components/layout/Header'
 import MonitorMode from '../../components/layout/MonitorMode'
 import LeaderChangeCelebration from '../../components/layout/LeaderChangeCelebration'
+import AutoRefresh from '../../components/layout/AutoRefresh'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       <MonitorMode />
       <LeaderChangeCelebration />
+      <AutoRefresh />
     </div>
   )
 }

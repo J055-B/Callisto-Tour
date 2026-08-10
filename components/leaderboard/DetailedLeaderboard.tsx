@@ -233,7 +233,10 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
                 // the week keeps climbing instead of flatlining — the whole
                 // point is to see who's actually pulling ahead once everyone
                 // clears their target.
-                const weeklyPct = computeTargetPct(e.weeklyDistance, weeklyTarget)
+                // weeklySales is raw sales (count/USD), same unit as
+                // weeklyTarget — weeklyDistance is km, comparing that
+                // against weeklyTarget was mixing units (the "3,653%" bug).
+                const weeklyPct = computeTargetPct(e.weeklySales, weeklyTarget)
                 return (
                   <div
                     key={e.id}
