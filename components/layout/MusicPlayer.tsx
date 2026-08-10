@@ -45,9 +45,10 @@ export default function MusicPlayer() {
     }
   }, [pathname, phase])
 
-  function nextFromQueue(): string {
+  function nextFromQueue(): string | undefined {
+    if (PLAYLIST.length === 0) return undefined
     if (queueRef.current.length === 0) queueRef.current = shuffle(PLAYLIST)
-    return queueRef.current.shift() as string
+    return queueRef.current.shift()
   }
 
   function playTrack(src: string, opts: { loop?: boolean } = {}) {
@@ -61,7 +62,15 @@ export default function MusicPlayer() {
 
   function startShuffleTrack() {
     setPhase('shuffle')
-    playTrack(nextFromQueue())
+    const src = nextFromQueue()
+    if (!src) {
+      // No shuffle tracks loaded yet — stop cleanly (silence) instead of
+      // trying to play nothing. See lib/music.ts's PLAYLIST comment.
+      audioRef.current?.pause()
+      setPlaying(false)
+      return
+    }
+    playTrack(src)
   }
 
   function startEntrance() {
