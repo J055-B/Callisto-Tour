@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Clock } from 'lucide-react'
+import EditableText from './EditableText'
 
 const BRAND_INTERVAL_MS = 20000 // how often the brand banner plays
 const BRAND_DURATION_MS = 3200 // must match tailwind.config.cjs's brandSlide duration
@@ -44,9 +45,11 @@ export default function Header() {
         <img src="/images/Callisto%20Icon.png" alt="Callisto" className="w-12 h-12 object-contain shrink-0" />
         <div>
           <div className="text-xl font-bold italic">
-            TOUR DE <span className="shimmer-text">CALLISTO</span>
+            <EditableText contentKey="header.titleLine1" /> <span className="shimmer-text"><EditableText contentKey="header.titleLine2" /></span>
           </div>
-          <div className="text-sm text-secondaryText">AUGUST 2026 EDITION</div>
+          <div className="text-sm text-secondaryText">
+            <EditableText contentKey="header.subtitle" />
+          </div>
         </div>
         <img src="/images/Bicycle-transparent.png" alt="" className="w-10 h-10 object-contain shrink-0 ml-1" />
       </div>

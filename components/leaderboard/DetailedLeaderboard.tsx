@@ -8,6 +8,7 @@ import { LOOP_KM } from '../../data/route'
 import { getRole, ROLE_CHANGED_EVENT } from '../../lib/session'
 import { TEST_CELEBRATION_EVENT } from '../../lib/celebration-events'
 import WelcomeEmailButton from './WelcomeEmailButton'
+import EditableText from '../layout/EditableText'
 
 const MEDAL_COLOR: Record<number, string> = {
   1: '#FFD700', // gold
@@ -62,8 +63,8 @@ function SectionHeader({
 }: {
   icon: React.ReactNode
   accent: string
-  title: string
-  subtitle: string
+  title: React.ReactNode
+  subtitle: React.ReactNode
   action?: React.ReactNode
 }) {
   return (
@@ -119,8 +120,8 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
       <SectionHeader
         icon={<Trophy size={16} color="#FFD400" />}
         accent="#FFD400"
-        title="LEADERBOARD"
-        subtitle="Live team standings, updated in real time"
+        title={<EditableText contentKey="leaderboard.title" />}
+        subtitle={<EditableText contentKey="leaderboard.subtitle" />}
         action={
           isAdmin && (
             <div className="flex items-center gap-2">
@@ -210,8 +211,8 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
         <SectionHeader
           icon={<Target size={16} color="#2DD4BF" />}
           accent="#2DD4BF"
-          title="TEAM TARGETS"
-          subtitle="Daily pace vs weekly pace, per team"
+          title={<EditableText contentKey="teamTargets.title" />}
+          subtitle={<EditableText contentKey="teamTargets.subtitle" />}
         />
         <div className="overflow-x-auto">
           <div className="min-w-[700px]">
