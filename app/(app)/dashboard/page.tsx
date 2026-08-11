@@ -4,6 +4,7 @@ import HeroPanel from '../../../components/hero/HeroPanel'
 import RouteOverview from '../../../components/stage/RouteOverview'
 import StageSummary from '../../../components/stage/StageSummary'
 import { getLeaderboard, getRoute } from '../../../lib/data-source'
+import EditableText from '../../../components/layout/EditableText'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +19,9 @@ export default async function Home() {
         <div className="rounded-lg p-6 app-surface">
           <div className="flex items-center gap-3 mb-6">
             <LiveStatusBadge />
-            <h2 className="text-2xl font-extrabold italic shimmer-text">LIVE LEADERBOARD</h2>
+            <h2 className="text-2xl font-extrabold italic shimmer-text">
+              <EditableText contentKey="dashboard.liveStatus.title" />
+            </h2>
           </div>
           <LiveLeaderboard entries={leaderboard} />
         </div>

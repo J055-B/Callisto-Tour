@@ -2,6 +2,7 @@ import { getRoute, getLeaderboard } from '../../../lib/data-source'
 import { LOOP_KM } from '../../../data/route'
 import RouteMapLoader from '../../../components/map/RouteMapLoader'
 import MilestoneChart from '../../../components/stage/MilestoneChart'
+import EditableText from '../../../components/layout/EditableText'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,9 @@ export default async function MapPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Route</h1>
+      <h1 className="text-3xl font-bold mb-4">
+        <EditableText contentKey="route.title" />
+      </h1>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="p-3 bg-elevated rounded app-surface">
           <div className="text-xs text-secondaryText">TOTAL ROUTE</div>

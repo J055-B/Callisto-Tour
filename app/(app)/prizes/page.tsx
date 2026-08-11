@@ -2,6 +2,7 @@ import React from 'react'
 import { Trophy, Calendar, Clock, Bike } from 'lucide-react'
 import { getTeams, getLeaderboard } from '../../../lib/data-source'
 import { computeWeeklyWinners, TOUR_START } from '../../../lib/calculations'
+import EditableText from '../../../components/layout/EditableText'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,7 @@ function formatDate(dateStr: string) {
 
 // Same icon-badge + title + fading gradient underline treatment as the
 // /leaderboard page's sections, so both pages read as one family.
-function SectionHeader({ icon, accent, title, subtitle }: { icon: React.ReactNode; accent: string; title: string; subtitle: string }) {
+function SectionHeader({ icon, accent, title, subtitle }: { icon: React.ReactNode; accent: string; title: React.ReactNode; subtitle: React.ReactNode }) {
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2.5">
@@ -56,7 +57,12 @@ export default async function PrizesPage() {
 
       {/* TOUR CHAMPION — full width, top */}
       <div className="p-4 app-surface rounded-lg border border-border">
-        <SectionHeader icon={<Trophy size={16} color="#FFD400" />} accent="#FFD400" title="TOUR CHAMPION" subtitle="Main competition prize" />
+        <SectionHeader
+          icon={<Trophy size={16} color="#FFD400" />}
+          accent="#FFD400"
+          title={<EditableText contentKey="prizes.tourChampion.title" />}
+          subtitle={<EditableText contentKey="prizes.tourChampion.subtitle" />}
+        />
         {!tourStarted || !leader ? (
           <p className="text-secondaryText">Details TBA.</p>
         ) : (
@@ -85,8 +91,8 @@ export default async function PrizesPage() {
         <SectionHeader
           icon={<Calendar size={16} color="#2DD4BF" />}
           accent="#2DD4BF"
-          title="WEEKLY WINNER"
-          subtitle="Most km for each completed week — locked in once that week ends"
+          title={<EditableText contentKey="prizes.weeklyWinner.title" />}
+          subtitle={<EditableText contentKey="prizes.weeklyWinner.subtitle" multiline />}
         />
 
         <div className="space-y-2">
