@@ -125,7 +125,7 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
         action={
           isAdmin && (
             <div className="flex items-center gap-2">
-              <WelcomeEmailButton />
+              <WelcomeEmailButton entries={entries} />
               <button
                 onClick={() => window.dispatchEvent(new Event(TEST_CELEBRATION_EVENT))}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-bold text-secondaryText border border-border hover:text-yellow hover:border-yellow transition"
