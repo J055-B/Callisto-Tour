@@ -49,9 +49,9 @@ export default function SiteContentProvider({ initialContent, children }: { init
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: ADMIN_USER, password: ADMIN_PASS, updates: { [key]: value } })
       })
-      if (!res.ok) throw new Error('save failed')
-      const saved = (await res.json()) as SiteContent
-      setContent(saved)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || `save failed (${res.status})`)
+      setContent(data as SiteContent)
     } catch (err) {
       setContent((c) => ({ ...c, [key]: previous }))
       throw err

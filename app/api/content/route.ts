@@ -35,9 +35,12 @@ export async function POST(req: Request) {
     const content = await saveSiteContent(body.updates)
     return NextResponse.json(content)
   } catch (err) {
-    // Most likely cause: no Blob store attached to this Vercel project yet
-    // (BLOB_READ_WRITE_TOKEN missing) — see the setup note in the project
-    // README / the message this shipped with.
-    return NextResponse.json({ error: 'Could not save — is a Blob store connected to this project?' }, { status: 500 })
+    // Log the real error to Vercel's function logs (Project → Logs) even
+    // though the JSON response below already includes it too — belt and
+    // suspenders, in case the response ever gets swallowed by something
+    // upstream (a proxy, a browser extension, etc).
+    console.error('[api/content] saveSiteContent failed:', err)
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: `Could not save: ${message}` }, { status: 500 })
   }
 }

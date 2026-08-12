@@ -43,8 +43,8 @@ export default function EditableText({ contentKey, multiline = false }: { conten
     try {
       await updateContent(contentKey, draft)
       setEditing(false)
-    } catch {
-      setError('Could not save')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save')
     } finally {
       setSaving(false)
     }
