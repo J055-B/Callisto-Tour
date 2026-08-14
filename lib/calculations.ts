@@ -13,12 +13,23 @@ const WEEKS = [
 
 // km awarded per 1% of daily target hit. Default is 10 (100% = 1,000km).
 // Power Stage weekends pay more; everything else uses DEFAULT_RATE.
+//
+// Friday is included alongside its Sat/Sun — the "weekend = 1 daily
+// target" bucketing (bucketStartFor, below) already treats Fri+Sat+Sun as
+// one combined unit worth 1.5x (Power Stage 1/2) or 1.25x (Final), so the
+// KM RATE has to apply to all three days of that block, not just Sat/Sun.
+// Missing the Friday here was the "not adding the weekend's 50%" bug
+// (Aug 2026) — Friday sales were paying the normal 10km/1% instead of the
+// weekend's 15km/1%.
 const POWER_RATE: Record<string, number> = {
-  '2026-08-15': 15, // Power Stage 1 (Week 1 weekend)
+  '2026-08-14': 15, // Power Stage 1 (Week 1 weekend) — Friday
+  '2026-08-15': 15,
   '2026-08-16': 15,
-  '2026-08-22': 15, // Power Stage 2 (Week 2 weekend)
+  '2026-08-21': 15, // Power Stage 2 (Week 2 weekend) — Friday
+  '2026-08-22': 15,
   '2026-08-23': 15,
-  '2026-08-29': 12.5, // Final Power Stage (Week 3 weekend)
+  '2026-08-28': 12.5, // Final Power Stage (Week 3 weekend) — Friday
+  '2026-08-29': 12.5,
   '2026-08-30': 12.5
 }
 const DEFAULT_RATE = 10
@@ -71,6 +82,16 @@ function kmForDay(team: Team, dateStr: string, sales: number) {
 
 function weekFor(dateStr: string) {
   return WEEKS.find((w) => dateStr >= w.start && dateStr <= w.end)
+}
+
+// The current week's end date (Israel midnight closes it — same boundary
+// as every other day-end in this file) — used by the status-report email
+// to show "time left to name this week's winner". Falls back to the last
+// defined week if today is somehow past the whole WEEKS table.
+export function currentWeekEnd(today: Date = new Date()): string {
+  const todayStr = today.toISOString().slice(0, 10)
+  const week = weekFor(todayStr)
+  return week?.end ?? WEEKS[WEEKS.length - 1].end
 }
 
 function clampToTourRange(dateStr: string) {
