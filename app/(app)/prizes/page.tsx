@@ -2,6 +2,7 @@ import React from 'react'
 import { Trophy, Calendar, Clock, Bike } from 'lucide-react'
 import { getTeams, getLeaderboard } from '../../../lib/data-source'
 import { computeWeeklyWinners, TOUR_START } from '../../../lib/calculations'
+import { flagUrl } from '../../../lib/flags'
 import EditableText from '../../../components/layout/EditableText'
 
 export const dynamic = 'force-dynamic'
@@ -45,7 +46,7 @@ export default async function PrizesPage() {
   const [teams, leaderboard] = await Promise.all([getTeams(), getLeaderboard()])
   // Newest week first — this week's winner (or in-progress leader) always
   // shows up top, last week gets pushed down, etc.
-  const weeklyWinners = [...computeWeeklyWinners(teams)].reverse()
+  const weeklyWinners = computeWeeklyWinners(teams)
   const leader = leaderboard[0]
   const todayStr = new Date().toISOString().slice(0, 10)
   const tourStarted = todayStr >= TOUR_START
@@ -96,31 +97,52 @@ export default async function PrizesPage() {
         />
 
         <div className="space-y-2">
-          {weeklyWinners.map((w) => (
-            <div key={w.weekIndex} className="flex items-center justify-between rounded-lg bg-elevated px-3 py-2.5">
-              <div>
-                <div className="text-sm font-bold">
-                  {w.weekLabel} <span className="text-secondaryText font-normal">({formatDate(w.start)} – {formatDate(w.end)})</span>
-                </div>
-                {w.status === 'upcoming' && <div className="text-xs text-secondaryText mt-0.5">Not started yet</div>}
-                {w.status === 'in-progress' && (
-                  <div className="text-xs text-electric mt-0.5 flex items-center gap-1">
-                    <Clock size={11} /> Still running — leader can change
+          {weeklyWinners.map((w) => {
+            const winnerTeam = w.winner ? teams.find((t) => t.teamCode === w.winner!.teamCode) : undefined
+            const flag = winnerTeam ? flagUrl(winnerTeam.countryCode) : undefined
+            return (
+              <div
+                key={w.weekIndex}
+                className={
+                  'flex items-center justify-between rounded-lg px-4 py-3.5 border ' +
+                  (w.status === 'upcoming' ? 'bg-elevated border-border' : 'bg-gradient-to-r from-yellow/15 via-yellow/5 to-transparent border-yellow/50')
+                }
+              >
+                <div>
+                  <div className="text-base font-bold">
+                    {w.weekLabel} <span className="text-secondaryText font-normal">({formatDate(w.start)} – {formatDate(w.end)})</span>
                   </div>
-                )}
+                  {w.status === 'upcoming' && <div className="text-sm text-secondaryText mt-1">Not started yet</div>}
+                  {w.status === 'in-progress' && (
+                    <div className="text-sm text-electric mt-1 flex items-center gap-1.5">
+                      <Clock size={13} /> Still running — leader can change
+                    </div>
+                  )}
+                  {w.status === 'completed' && (
+                    <div className="text-sm text-positive mt-1 flex items-center gap-1.5">
+                      <Trophy size={13} /> Final — locked in
+                    </div>
+                  )}
+                </div>
+                <div className="text-right flex items-center gap-2.5">
+                  {w.winner ? (
+                    <>
+                      <div>
+                        <div className="font-extrabold text-lg text-yellow flex items-center gap-1.5 justify-end">
+                          {flag && <img src={flag} alt="" className="w-5 h-3.5 rounded-sm object-cover" />}
+                          {w.winner.teamCode}
+                        </div>
+                        <div className="text-sm text-secondaryText mt-0.5">{Math.round(w.winner.weeklyDistance).toLocaleString()} km</div>
+                      </div>
+                      <Trophy size={22} color="#FFD700" fill={w.status === 'completed' ? '#FFD700' : 'none'} />
+                    </>
+                  ) : (
+                    <div className="text-secondaryText text-sm">—</div>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
-                {w.winner ? (
-                  <>
-                    <div className={'font-bold ' + (w.status === 'completed' ? 'text-yellow' : 'text-secondaryText')}>{w.winner.teamCode}</div>
-                    <div className="text-xs text-secondaryText">{Math.round(w.winner.weeklyDistance).toLocaleString()} km</div>
-                  </>
-                ) : (
-                  <div className="text-secondaryText text-sm">—</div>
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
