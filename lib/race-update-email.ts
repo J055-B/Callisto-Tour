@@ -33,8 +33,25 @@ function km(value: number) {
   return `${Math.round(value).toLocaleString()} km`
 }
 
-function sales(value: number, pool: string) {
-  return pool === 'RET' ? value.toLocaleString(undefined, { maximumFractionDigits: 2 }) : Math.round(value).toLocaleString()
+function sales(value: number) {
+  // Keep leaderboard targets compact: at most 3 significant digits.
+  // Large values use K/M suffixes so the email table stays readable.
+  if (!Number.isFinite(value)) return '—'
+
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+
+  const format = (scaled: number, suffix: string) => {
+    const rounded = Number(scaled.toPrecision(3))
+    return `${sign}${rounded.toLocaleString('en-US', { maximumFractionDigits: 3 })}${suffix}`
+  }
+
+  if (abs >= 1_000_000) return format(value / 1_000_000, 'M')
+  if (abs >= 1_000) return format(value / 1_000, 'K')
+
+  // Values below 1000 keep up to 3 significant digits, e.g. 3.15 or 75.3.
+  const rounded = Number(abs.toPrecision(3))
+  return `${sign}${rounded.toLocaleString('en-US', { maximumFractionDigits: 3 })}`
 }
 
 function progressColor(value: number, overflow = false) {
@@ -112,9 +129,9 @@ export function buildRaceUpdateEmail(entries: LeaderboardEntry[], origin: string
     return `<tr style="border-top:1px solid ${BORDER};">
       <td style="padding:9px 8px;color:${pos <= 3 ? GOLD : WHITE};font-weight:700;">${medal}</td>
       <td style="padding:9px 8px;color:${WHITE};font-weight:700;white-space:nowrap;">${esc(e.teamCode)}</td>
-      <td style="padding:9px 8px;color:${WHITE};white-space:nowrap;">${sales(e.dailyTarget, e.pool)}</td>
+      <td style="padding:9px 8px;color:${WHITE};white-space:nowrap;">${sales(e.dailyTarget)}</td>
       <td style="padding:9px 8px;color:${progressColor(e.targetPct, true)};font-weight:700;white-space:nowrap;">${pct(e.targetPct)}</td>
-      <td style="padding:9px 8px;color:${WHITE};white-space:nowrap;">${sales(target, e.pool)}</td>
+      <td style="padding:9px 8px;color:${WHITE};white-space:nowrap;">${sales(target)}</td>
       <td style="padding:9px 8px;color:${progressColor(weeklyPct, true)};font-weight:700;white-space:nowrap;">${pct(weeklyPct)}</td>
     </tr>`
   }).join('')
