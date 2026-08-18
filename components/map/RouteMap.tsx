@@ -318,15 +318,15 @@ export default function RouteMap({ waypoints, teams }: { waypoints: RoutePoint[]
       const flag = flagUrl(position.countryCode)
       const html = `
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
-          <div style="width:96px;height:84px;border-radius:12px;overflow:hidden;border:3px solid #ffd21f;box-shadow:0 3px 10px rgba(0,0,0,.6);position:relative;${flag ? `background-image:url('${flag}');background-size:cover;background-position:center;` : 'background:#1a1f18;'}">
-            <img src="/cyclist/cyclist.gif" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:88px;height:auto;" />
+          <div style="width:58px;height:51px;border-radius:7px;overflow:hidden;border:2px solid #ffd21f;box-shadow:0 2px 6px rgba(0,0,0,.6);position:relative;${flag ? `background-image:url('${flag}');background-size:cover;background-position:center;` : 'background:#1a1f18;'}">
+            <img src="/cyclist/cyclist.gif" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:53px;height:auto;" />
           </div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:7px;background:#1a1f18;border:1.5px solid #ffd21f;border-radius:999px;padding:3px 11px;white-space:nowrap;">
-            <span style="font:700 12px Inter,Arial,sans-serif;color:#f4f1e8;">${team.teamCode}</span>
-            <span style="font-style:italic;font-weight:700;font-size:14px;font-family:Georgia,serif;color:#ffd21f;">#${pos}</span>
+          <div style="display:flex;align-items:center;justify-content:center;gap:4px;background:#1a1f18;border:1px solid #ffd21f;border-radius:999px;padding:2px 7px;white-space:nowrap;">
+            <span style="font:700 9px Inter,Arial,sans-serif;color:#f4f1e8;">${team.teamCode}</span>
+            <span style="font-style:italic;font-weight:700;font-size:10px;font-family:Georgia,serif;color:#ffd21f;">#${pos}</span>
           </div>
         </div>`
-      const icon = L.divIcon({ className: '', html, iconSize: undefined, iconAnchor: [48, 42] })
+      const icon = L.divIcon({ className: '', html, iconSize: undefined, iconAnchor: [29, 26] })
       const marker = L.marker([lat, lon], { icon, zIndexOffset: index })
       marker.bindPopup(
         `<b>${team.teamCode}</b><br/>${position.countryName}<br/>${position.currentStage || ''}<br/>${Math.round(realDistance).toLocaleString()} km${simulate ? ` real · ${Math.round(distance).toLocaleString()} km simulated` : ''}`
