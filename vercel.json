@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-race-update",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}
