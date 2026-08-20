@@ -155,7 +155,7 @@ export function buildRaceUpdateEmail(entries: LeaderboardEntry[], origin: string
   </tr></table>
 </td></tr>
 
-<tr><td style="height:260px;background:#05090B url('${heroUrl}') center center / cover no-repeat;"><div style="height:260px;"></div></td></tr>
+<tr><td style="height:260px;background:${BG};line-height:0;font-size:0;"><img src="${heroUrl}" width="1040" height="260" alt="" style="display:block;width:100%;max-width:1040px;height:260px;object-fit:cover;border:0;"></td></tr>
 
 <tr><td style="padding:24px 34px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>

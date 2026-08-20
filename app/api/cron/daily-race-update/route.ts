@@ -23,7 +23,16 @@ export async function GET(req: Request) {
 
   try {
     const entries = await getLeaderboard()
-    const origin = new URL(req.url).origin
+    // NOTE: deliberately NOT `new URL(req.url).origin` — when Vercel Cron
+    // invokes this route internally, req.url can resolve to a
+    // deployment-specific URL instead of the public production domain. If
+    // Vercel Authentication / Deployment Protection is on for the project,
+    // that internal URL is unreachable by anyone without a Vercel session
+    // — including Gmail's image-loading proxy when the recipient opens the
+    // email — which is why images render fine when generated manually from
+    // the browser (already on the public domain) but come up blank in the
+    // automated send. Always use the known public domain instead.
+    const origin = process.env.SITE_URL || 'https://callisto-tour.vercel.app'
     const html = buildRaceUpdateEmail(entries, origin)
     await sendMail({ to: RECIPIENT, subject: RACE_UPDATE_EMAIL_SUBJECT, html })
     return NextResponse.json({ ok: true, sentTo: RECIPIENT, teamCount: entries.length })
