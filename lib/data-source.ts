@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import route from '../data/route'
 import teamsRaw from '../data/teams'
 import { computeLeaderboard } from './calculations'
@@ -305,9 +306,24 @@ export async function getRoute(): Promise<RoutePoint[]> {
   return route
 }
 
+// Every open tab (LeaderChangeCelebration.tsx polls /api/leader every 30s,
+// plus /dashboard, /leaderboard, /map all call this too) used to trigger
+// its own full recompute — with several people watching at once that adds
+// up fast. unstable_cache shares ONE computed result across all of them:
+// whichever request lands first within a given 30s window does the work,
+// everyone else in that window (any tab, any user) just reads the same
+// cached result for free. Nothing computes at all if nobody's asking.
+const getLeaderboardCached = unstable_cache(
+  async () => {
+    const t = await getTeams()
+    return computeLeaderboard(t)
+  },
+  ['leaderboard'],
+  { revalidate: 30 }
+)
+
 export async function getLeaderboard() {
-  const t = await getTeams()
-  return computeLeaderboard(t)
+  return getLeaderboardCached()
 }
 
 export async function getCompetitionState() {
