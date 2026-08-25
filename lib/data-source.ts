@@ -292,6 +292,15 @@ function buildTeam(cfg: TeamSheetConfig & { dailyTarget: number; monthlyTarget?:
 // so the map/leaderboard never visibly "resets to the start line".
 let lastGoodTeams: Team[] | null = null
 
+// Last successfully fetched rows PER SHEET. getTeams() as a whole can
+// succeed (most sheets load fine) even while one or two individual sheets
+// fail — those specific teams used to fall back to buildTeam's `?? []`
+// default, silently zeroing just them out, and that mixed result then got
+// saved as lastGoodTeams, poisoning it too. Falling back per-sheet instead
+// keeps the affected team on its own last real numbers, invisibly, without
+// dragging the rest of the (successfully loaded) teams into a stale snapshot.
+const lastGoodSheetRows = new Map<string, string[][]>()
+
 export async function getTeams(): Promise<Team[]> {
   try {
     const targetRows = parseTargetRows(await fetchSheetRows(TARGET_SHEET_NAME))
@@ -306,6 +315,16 @@ export async function getTeams(): Promise<Team[]> {
     for (const result of fetchedSheets) {
       if (result.status === 'fulfilled') {
         sheetRowsByName.set(result.value.name, result.value.rows)
+        lastGoodSheetRows.set(result.value.name, result.value.rows)
+      }
+    }
+
+    // Second pass: any sheet that failed this round but has a known-good
+    // version from a previous successful fetch gets that instead of
+    // silently defaulting to empty in buildTeam.
+    for (const name of uniqueSheetNames) {
+      if (!sheetRowsByName.has(name) && lastGoodSheetRows.has(name)) {
+        sheetRowsByName.set(name, lastGoodSheetRows.get(name)!)
       }
     }
 
@@ -332,9 +351,19 @@ export async function getRoute(): Promise<RoutePoint[]> {
 // plus /dashboard, /leaderboard, /map all call this too) used to trigger
 // its own full recompute — with several people watching at once that adds
 // up fast. unstable_cache shares ONE computed result across all of them:
-// whichever request lands first within a given 30s window does the work,
+// whichever request lands first within a given 60s window does the work,
 // everyone else in that window (any tab, any user) just reads the same
 // cached result for free. Nothing computes at all if nobody's asking.
+//
+// KNOWN LIMITATION: this cache is shared across ALL server instances, but
+// the lastGoodTeams/lastGoodSheetRows fallback above is per-instance
+// memory. A cold instance with nothing saved yet that hits a sheet failure
+// has no per-team fallback to use, and whatever it computes (possibly with
+// a team or two zeroed out) gets cached here and served to everyone for up
+// to 60s — even instances that DID have good data sitting unused in their
+// own memory. Retries make this rare, but the fully robust fix is moving
+// lastGoodTeams/lastGoodSheetRows to a persistent, cross-instance store
+// (Vercel KV/Blob) instead of module-level memory.
 const getLeaderboardCached = unstable_cache(
   async () => {
     const t = await getTeams()
