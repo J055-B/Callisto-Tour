@@ -188,18 +188,7 @@ export function buildRaceUpdateEmail(entries: LeaderboardEntry[], origin: string
 <td width="2%"></td>
 <td valign="middle" width="34%" style="padding:12px 20px;color:${WHITE};font-size:15px;line-height:24px;">${esc(weeklyLeader?.teamCode ?? 'The current leader')} leads at <b style="color:${GOLD};">${pct(weeklyLeaderPct)}</b> of the weekly target!<br><span style="color:${MUTED};">But the race is far from over.</span><br><br><span style="color:${MUTED};">One strong day can change the entire leaderboard.<br>One great push can rewrite the standings.</span><br><b style="color:${GOLD};font-style:italic;">KEEP PUSHING. KEEP RIDING.</b></td>
 <td width="2%"></td>
-<td valign="middle" width="38%" style="text-align:center;">
-<!--[if gte mso 9]>
-<v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:426px;height:160px;">
-<v:fill type="frame" src="${heroUrl}" color="#080D10" />
-<v:textbox inset="0,0,0,0">
-<![endif]-->
-<div style="padding:18px 20px;background:#080D10 url('${heroUrl}') right center / cover no-repeat;text-align:center;"><div style="font-size:25px;line-height:30px;font-weight:900;font-style:italic;color:${GOLD};letter-spacing:1px;">POWER, SPEED, FAME...</div><div style="font-size:22px;color:${WHITE};font-style:italic;margin-top:8px;">Be a <span style="font-size:58px;line-height:60px;font-weight:900;color:${GOLD};text-shadow:0 0 14px rgba(255,212,0,.25);">LEGEND</span></div></div>
-<!--[if gte mso 9]>
-</v:textbox>
-</v:rect>
-<![endif]-->
-</td>
+<td valign="middle" width="38%" style="padding:18px 20px;background:#080D10 url('${heroUrl}') right center / cover no-repeat;text-align:center;"><div style="font-size:25px;line-height:30px;font-weight:900;font-style:italic;color:${GOLD};letter-spacing:1px;">POWER, SPEED, FAME...</div><div style="font-size:22px;color:${WHITE};font-style:italic;margin-top:8px;">Be a <span style="font-size:58px;line-height:60px;font-weight:900;color:${GOLD};text-shadow:0 0 14px rgba(255,212,0,.25);">LEGEND</span></div></td>
 </tr></table></td></tr>
 
 <tr><td style="padding:22px 34px 18px;border-top:1px solid ${GOLD_DARK};text-align:center;background:#080D10;">
