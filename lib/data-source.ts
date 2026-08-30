@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache'
 import route from '../data/route'
 import teamsRaw from '../data/teams'
 import { computeLeaderboard } from './calculations'
@@ -118,32 +117,22 @@ function parseNumber(value?: string) {
   return Number.isFinite(number) ? number : undefined
 }
 
-async function fetchSheetRows(sheetName: string, attempt = 1): Promise<string[][]> {
-  try {
-    const response = await fetch(SHEET_CSV_URL(sheetName), {
-      next: { revalidate: 60 },
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        Accept: 'text/csv, */*;q=0.8'
-      }
-    })
-
-    if (!response.ok) {
-      throw new Error(`Google Sheet returned ${response.status} for sheet ${sheetName}`)
+async function fetchSheetRows(sheetName: string) {
+  const response = await fetch(SHEET_CSV_URL(sheetName), {
+    next: { revalidate: 60 },
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      Accept: 'text/csv, */*;q=0.8'
     }
+  })
 
-    const text = await response.text()
-    return parseCsv(text).filter((row) => row.some((cell) => cell.trim().length > 0))
-  } catch (error) {
-    // A single transient hiccup (network blip, momentary rate-limit) used
-    // to fall straight through to the caller's catch and reset the whole
-    // team list to the static local mock. Retry a couple times with a
-    // short backoff first — most failures never make it past this.
-    if (attempt >= 3) throw error
-    await new Promise((resolve) => setTimeout(resolve, attempt * 400))
-    return fetchSheetRows(sheetName, attempt + 1)
+  if (!response.ok) {
+    throw new Error(`Google Sheet returned ${response.status} for sheet ${sheetName}`)
   }
+
+  const text = await response.text()
+  return parseCsv(text).filter((row) => row.some((cell) => cell.trim().length > 0))
 }
 
 interface TargetRow {
@@ -286,21 +275,6 @@ function buildTeam(cfg: TeamSheetConfig & { dailyTarget: number; monthlyTarget?:
   }
 }
 
-// Last successfully computed team list, kept in memory as a safety net.
-// If Google Sheets is unreachable even after retries, we show this
-// (slightly stale, but real) instead of the static zeroed-out mock —
-// so the map/leaderboard never visibly "resets to the start line".
-let lastGoodTeams: Team[] | null = null
-
-// Last successfully fetched rows PER SHEET. getTeams() as a whole can
-// succeed (most sheets load fine) even while one or two individual sheets
-// fail — those specific teams used to fall back to buildTeam's `?? []`
-// default, silently zeroing just them out, and that mixed result then got
-// saved as lastGoodTeams, poisoning it too. Falling back per-sheet instead
-// keeps the affected team on its own last real numbers, invisibly, without
-// dragging the rest of the (successfully loaded) teams into a stale snapshot.
-const lastGoodSheetRows = new Map<string, string[][]>()
-
 export async function getTeams(): Promise<Team[]> {
   try {
     const targetRows = parseTargetRows(await fetchSheetRows(TARGET_SHEET_NAME))
@@ -315,30 +289,14 @@ export async function getTeams(): Promise<Team[]> {
     for (const result of fetchedSheets) {
       if (result.status === 'fulfilled') {
         sheetRowsByName.set(result.value.name, result.value.rows)
-        lastGoodSheetRows.set(result.value.name, result.value.rows)
-      }
-    }
-
-    // Second pass: any sheet that failed this round but has a known-good
-    // version from a previous successful fetch gets that instead of
-    // silently defaulting to empty in buildTeam.
-    for (const name of uniqueSheetNames) {
-      if (!sheetRowsByName.has(name) && lastGoodSheetRows.has(name)) {
-        sheetRowsByName.set(name, lastGoodSheetRows.get(name)!)
       }
     }
 
     if (sheetRowsByName.size === 0) throw new Error('No team sheets could be loaded from Google Sheets')
 
-    const teams = configs.map((cfg) => buildTeam(cfg, sheetRowsByName))
-    lastGoodTeams = teams
-    return teams
+    return configs.map((cfg) => buildTeam(cfg, sheetRowsByName))
   } catch (error) {
-    if (lastGoodTeams) {
-      console.warn('Failed to load teams from Google Sheet, using last known good data.', error)
-      return lastGoodTeams
-    }
-    console.warn('Failed to load teams from Google Sheet, no cached data yet — using local fallback.', error)
+    console.warn('Failed to load teams from Google Sheet, using local fallback.', error)
     return teamsRaw as Team[]
   }
 }
@@ -347,34 +305,9 @@ export async function getRoute(): Promise<RoutePoint[]> {
   return route
 }
 
-// Every open tab (LeaderChangeCelebration.tsx polls /api/leader every 30s,
-// plus /dashboard, /leaderboard, /map all call this too) used to trigger
-// its own full recompute — with several people watching at once that adds
-// up fast. unstable_cache shares ONE computed result across all of them:
-// whichever request lands first within a given 60s window does the work,
-// everyone else in that window (any tab, any user) just reads the same
-// cached result for free. Nothing computes at all if nobody's asking.
-//
-// KNOWN LIMITATION: this cache is shared across ALL server instances, but
-// the lastGoodTeams/lastGoodSheetRows fallback above is per-instance
-// memory. A cold instance with nothing saved yet that hits a sheet failure
-// has no per-team fallback to use, and whatever it computes (possibly with
-// a team or two zeroed out) gets cached here and served to everyone for up
-// to 60s — even instances that DID have good data sitting unused in their
-// own memory. Retries make this rare, but the fully robust fix is moving
-// lastGoodTeams/lastGoodSheetRows to a persistent, cross-instance store
-// (Vercel KV/Blob) instead of module-level memory.
-const getLeaderboardCached = unstable_cache(
-  async () => {
-    const t = await getTeams()
-    return computeLeaderboard(t)
-  },
-  ['leaderboard'],
-  { revalidate: 60 }
-)
-
 export async function getLeaderboard() {
-  return getLeaderboardCached()
+  const t = await getTeams()
+  return computeLeaderboard(t)
 }
 
 export async function getCompetitionState() {

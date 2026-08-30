@@ -34,23 +34,6 @@ const POWER_RATE: Record<string, number> = {
 }
 const DEFAULT_RATE = 10
 
-// Every "what day is it right now" check in this file needs Israel's
-// calendar date, not UTC's — today.toISOString().slice(0,10) gives UTC,
-// which is wrong for ~3 hours every night (00:00-03:00 Israel time is
-// still "yesterday" in UTC), silently misattributing late-night sales to
-// the wrong day/week during that window. This is the one place "now" gets
-// turned into a date string; eachDateBetween's own date-arithmetic below
-// is unaffected since it only manipulates already-known calendar dates,
-// never "now".
-function israelDateString(date: Date): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jerusalem',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(date)
-}
-
 function ratePerPercent(dateStr: string) {
   return POWER_RATE[dateStr] ?? DEFAULT_RATE
 }
@@ -106,7 +89,7 @@ function weekFor(dateStr: string) {
 // to show "time left to name this week's winner". Falls back to the last
 // defined week if today is somehow past the whole WEEKS table.
 export function currentWeekEnd(today: Date = new Date()): string {
-  const todayStr = israelDateString(today)
+  const todayStr = today.toISOString().slice(0, 10)
   const week = weekFor(todayStr)
   return week?.end ?? WEEKS[WEEKS.length - 1].end
 }
@@ -156,7 +139,7 @@ function weekUnitsFor(week: { start: string; end: string }, teamCode: string) {
 // Aug 10 / after Aug 31. See weekUnitsFor for the Fri/Sat/Sun-as-one-day
 // (or ×1.8 for MADA + FR) rule.
 export function weeklyTargetForToday(dailyTarget: number, teamCode: string, today: Date = new Date()) {
-  const todayStr = clampToTourRange(israelDateString(today))
+  const todayStr = clampToTourRange(today.toISOString().slice(0, 10))
   const week = weekFor(todayStr) ?? WEEKS[WEEKS.length - 1]
   return dailyTarget * weekUnitsFor(week, teamCode)
 }
@@ -166,7 +149,7 @@ export function weeklyTargetForToday(dailyTarget: number, teamCode: string, toda
 // Tour starts (DAY 1) or after it ends (DAY N).
 export function tourDayInfo(today: Date = new Date()) {
   const allDays = eachDateBetween(TOUR_START, TOUR_END)
-  const todayStr = clampToTourRange(israelDateString(today))
+  const todayStr = clampToTourRange(today.toISOString().slice(0, 10))
   const idx = allDays.indexOf(todayStr)
   return { day: idx === -1 ? 1 : idx + 1, totalDays: allDays.length }
 }
@@ -225,7 +208,7 @@ export function computeLap(totalDistance: number) {
 // Teams arrive already merged where the Target sheet only has one combined
 // row for them (MADA + FTD IL FR) — see data-source.ts's getTeams().
 export function computeLeaderboard(teams: Team[], today: Date = new Date()) {
-  const todayStr = israelDateString(today)
+  const todayStr = today.toISOString().slice(0, 10)
 
   const entries: LeaderboardEntry[] = teams.map((t) => {
     const metrics = computeTeamMetrics(t, todayStr)
@@ -276,7 +259,7 @@ export interface WeeklyWinner {
 // dailyHistory, so nothing needs to be separately "saved" anywhere; the
 // sheet IS the record. Used by the /prizes page.
 export function computeWeeklyWinners(teams: Team[], today: Date = new Date()): WeeklyWinner[] {
-  const todayStr = israelDateString(today)
+  const todayStr = today.toISOString().slice(0, 10)
 
   return WEEKS.map((week, i) => {
     const status: WeeklyWinner['status'] = todayStr > week.end ? 'completed' : todayStr >= week.start ? 'in-progress' : 'upcoming'
