@@ -8,6 +8,7 @@ import { LOOP_KM } from '../../data/route'
 import { getRole, ROLE_CHANGED_EVENT } from '../../lib/session'
 import { TEST_CELEBRATION_EVENT } from '../../lib/celebration-events'
 import WelcomeEmailButton from './WelcomeEmailButton'
+import FinalResultsEmailButton from './FinalResultsEmailButton'
 import EditableText from '../layout/EditableText'
 
 const MEDAL_COLOR: Record<number, string> = {
@@ -126,6 +127,7 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
           isAdmin && (
             <div className="flex items-center gap-2">
               <WelcomeEmailButton entries={entries} />
+              <FinalResultsEmailButton entries={entries} />
               <button
                 onClick={() => window.dispatchEvent(new Event(TEST_CELEBRATION_EVENT))}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-bold text-secondaryText border border-border hover:text-yellow hover:border-yellow transition"
@@ -226,26 +228,19 @@ export default function DetailedLeaderboard({ entries }: { entries: LeaderboardE
               <div>% OF WEEKLY TARGET</div>
             </div>
             <div className="mt-3 space-y-2">
-              {[...entries]
-                .map((e) => {
-                  const weeklyTarget = weeklyTargetForToday(e.dailyTarget, e.teamCode)
-                  // Uncapped like the daily %, so a team that blows past 100% for
-                  // the week keeps climbing instead of flatlining — the whole
-                  // point is to see who's actually pulling ahead once everyone
-                  // clears their target.
-                  // weeklySales is raw sales (count/USD), same unit as
-                  // weeklyTarget — weeklyDistance is km, comparing that
-                  // against weeklyTarget was mixing units (the "3,653%" bug).
-                  const weeklyPct = computeTargetPct(e.weeklySales, weeklyTarget)
-                  return { e, weeklyTarget, weeklyPct }
-                })
-                // This target table ranks by % OF WEEKLY TARGET (desc) — its own
-                // order, independent of the race leaderboard above (sorted by km).
-                .sort((a, b) => b.weeklyPct - a.weeklyPct)
-                .map(({ e, weeklyTarget, weeklyPct }, i) => {
-                  const pos = i + 1
-                  const isLeader = pos === 1
-                  return (
+              {entries.map((e, i) => {
+                const pos = i + 1
+                const isLeader = pos === 1
+                const weeklyTarget = weeklyTargetForToday(e.dailyTarget, e.teamCode)
+                // Uncapped like the daily %, so a team that blows past 100% for
+                // the week keeps climbing instead of flatlining — the whole
+                // point is to see who's actually pulling ahead once everyone
+                // clears their target.
+                // weeklySales is raw sales (count/USD), same unit as
+                // weeklyTarget — weeklyDistance is km, comparing that
+                // against weeklyTarget was mixing units (the "3,653%" bug).
+                const weeklyPct = computeTargetPct(e.weeklySales, weeklyTarget)
+                return (
                   <div
                     key={e.id}
                     className={
