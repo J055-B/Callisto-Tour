@@ -190,13 +190,18 @@ function computeTeamMetrics(team: Team, todayStr: string): TeamMetrics {
 
   // Fri/Sat/Sun accumulate together — "today" on a Saturday means
   // Friday+Saturday combined, on Sunday it's the whole Fri-Sun block.
-  const bucketStart = bucketStartFor(todayStr)
+  // Uses `lastDay` (clamped to TOUR_END), NOT the raw todayStr — once the
+  // Tour is over, "today" must stay frozen on the final day (2026-08-31)
+  // instead of looking for sales on a date that no longer belongs to the
+  // Tour, which silently zeroed out KM HOY / % TARGET for every team the
+  // day after the Tour ended (Sept 1 2026 bug).
+  const bucketStart = bucketStartFor(lastDay)
   let salesToday = 0
-  for (const date of eachDateBetween(bucketStart, todayStr)) {
+  for (const date of eachDateBetween(bucketStart, lastDay)) {
     salesToday += salesByDate.get(date) ?? 0
   }
-  const targetPct = computeTargetPct(salesToday, dailyTargetForDate(team, todayStr))
-  const kmToday = kmForDay(team, todayStr, salesToday)
+  const targetPct = computeTargetPct(salesToday, dailyTargetForDate(team, lastDay))
+  const kmToday = kmForDay(team, lastDay, salesToday)
 
   return { salesToday, targetPct, kmToday, totalDistance, weeklyDistance, weeklySales }
 }
